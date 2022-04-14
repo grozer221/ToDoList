@@ -1,0 +1,92 @@
+﻿@model ToDoList.Models.CategoryModel
+
+@{
+    ViewData["Title"] = "Details Category";
+}
+
+<h1>Category @Model.Name</h1>
+
+<div>
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.CreatedAt)
+        </dt>
+        <dd class="col-sm-10">
+            @Model.CreatedAt
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.UpdatedAt)
+        </dt>
+        <dd class="col-sm-10">
+            @Model.UpdatedAt
+        </dd>
+    </dl>
+</div>
+
+<h3>ToDos</h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Id)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Id)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Id)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Id)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var toDo in Model.ToDos)
+        {
+            <tr @(toDo.IsDone ? "class=toDoDone" : "") id="tr_@toDo.Id">
+                <td>
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" class="custom-control-input switch" id="switch_@toDo.Id" @(toDo.IsDone ? "checked" : "")>
+                        <label class="custom-control-label" for="switch_@toDo.Id"></label>
+                    </div>
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => toDo.Id)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => toDo.Name)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => toDo.Deadline)
+                </td>
+                <td>
+                    <a asp-area="" asp-controller="Todos" asp-action="Edit" asp-route-id="@toDo.Id" class="btn btn-dark">Edit</a>
+                    <a asp-area="" asp-controller="Todos" asp-action="Delete" asp-route-id="@toDo.Id" class="btn btn-danger">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div>
+    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-dark">Edit</a>
+    <a asp-action="Index" class="btn btn-outline-primary">Back to List</a>
+</div>
+
+@section Scripts {
+    @{
+    await Html.RenderPartialAsync("_ValidationScriptsPartial");
+}
+<script>
+    $(".switch").change(function () {
+       const id = this.id.replace("switch_", "");
+       const isDone = this.checked;
+       let url = `/ToDos/SwitchIsDone?id=${id}&isDone=${isDone}`;
+       $.post(url, null, function () {
+           $(`#tr_${id}`).toggleClass("toDoDone")
+       });
+    });
+</script>
+}

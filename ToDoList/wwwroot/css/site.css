@@ -1,0 +1,31 @@
+html {
+    font-size: 14px;
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    margin-bottom: 60px;
+}
+
+.toDoDone td {
+    position: relative;
+}
+
+.toDoDone td:before {
+    content: "";
+    position: absolute;
+    top: 40%;
+    left: 0;
+    border-bottom: 1px solid grey;
+    width: 100%;
+}
