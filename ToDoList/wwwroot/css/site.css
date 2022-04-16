@@ -17,15 +17,7 @@ body {
     margin-bottom: 60px;
 }
 
-.toDoDone td {
+.toDoDone {
     position: relative;
-}
-
-.toDoDone td:before {
-    content: "";
-    position: absolute;
-    top: 40%;
-    left: 0;
-    border-bottom: 1px solid grey;
-    width: 100%;
+    background-color: lightgrey;
 }

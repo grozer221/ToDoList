@@ -9,7 +9,7 @@ namespace ToDoList
         public static IDbConnection GetDbConnection(bool isDevelopment)
         {
             return isDevelopment
-                ? new SqlConnection(Environment.GetEnvironmentVariable("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=ToDoList;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False"))
+                ? new SqlConnection(@"Data Source=(localdb)\MSSQLLocalDB;Initial Catalog=ToDoList;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False")
                 : new MySqlConnection(ConvertMySqlConnectionString(Environment.GetEnvironmentVariable("JAWSDB_URL")));
         }
 

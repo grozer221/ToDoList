@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using ToDoList.ViewModels.ToDos;
 
 namespace ToDoList.Controllers
 {
+    [Authorize]
     public class ToDosController : Controller
     {
         private readonly ToDoRepository _toDoRepository;
@@ -15,9 +17,9 @@ namespace ToDoList.Controllers
         }
 
         // GET: ToDosController
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? like)
         {
-            return View(await _toDoRepository.GetWithCategory());
+            return View(await _toDoRepository.GetWithCategory(like ?? ""));
         }
 
         // GET: ToDosController/Create

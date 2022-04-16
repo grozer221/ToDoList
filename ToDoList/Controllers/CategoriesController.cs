@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace ToDoList.Controllers
 {
+    [Authorize]
     public class CategoriesController : Controller
     {
         private readonly CategoryRepository _categoryRepository;

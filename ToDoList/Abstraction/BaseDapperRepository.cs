@@ -27,16 +27,18 @@ namespace ToDoList.Abstraction
             return (await _dbConnection.QueryAsync<T>(query)).ToList();
         }
         
-        public virtual async Task CreateAsync(T baseModel)
+        public virtual async Task<T> CreateAsync(T baseModel)
         {
             var columns = GetColumns();
             var stringOfColumns = string.Join(", ", columns);
             var stringOfParameters = string.Join(", ", columns.Select(c => "@" + c));
-            string query = $"insert into {TableName} ({stringOfColumns}) values ({stringOfParameters})";
+            string query = $"insert into {TableName} ({stringOfColumns}) values ({stringOfParameters})" +
+                "SELECT CAST(SCOPE_IDENTITY() as int)";
             DateTime dateTimeNow = DateTime.Now;
             baseModel.CreatedAt = dateTimeNow;
             baseModel.UpdatedAt = dateTimeNow;
-            await _dbConnection.ExecuteAsync(query, baseModel);
+            baseModel.Id = await _dbConnection.QuerySingleAsync<int>(query, baseModel);
+            return baseModel;
         }
 
         public virtual async Task UpdateAsync(T baseModel)

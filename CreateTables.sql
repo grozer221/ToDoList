@@ -17,3 +17,14 @@ create table [dbo].[ToDos]
 	[UpdatedAt] datetime not null,
 	[CategoryId] int foreign key ([CategoryId]) references Categories(Id) on delete set null
 )
+
+create table [dbo].[Users]
+(
+	[Id] int identity(1, 1) not null primary key,
+	[Email] nvarchar(255) not null,
+	constraint AK_Users_Email unique([Email]),
+	[Password] nvarchar(255) not null,
+	[IsEmailConfirmed] tinyint not null,
+	[CreatedAt] datetime not null,
+	[UpdatedAt] datetime not null,
+)
