@@ -6,9 +6,11 @@ namespace ToDoList.Repositories
     public class UserRepository : BaseDapperRepository<UserModel>
     {
         private readonly IDbConnection _dbConnection;
-        public UserRepository(IDbConnection dbConnection) : base(dbConnection)
+        private readonly IHostEnvironment _hostEnvironment;
+        public UserRepository(IDbConnection dbConnection, IHostEnvironment hostEnvironment) : base(dbConnection, hostEnvironment)
         {
             _dbConnection = dbConnection;
+            _hostEnvironment = hostEnvironment;
         }
 
         public async Task<UserModel> GetByEmailAsync(string email)

@@ -7,9 +7,11 @@ namespace ToDoList.Repositories
     public class CategoryRepository : BaseDapperRepository<CategoryModel>
     {
         private readonly IDbConnection _dbConnection;
-        public CategoryRepository(IDbConnection dbConnection) : base(dbConnection)
+        private readonly IHostEnvironment _hostEnvironment;
+        public CategoryRepository(IDbConnection dbConnection, IHostEnvironment hostEnvironment) : base(dbConnection, hostEnvironment)
         {
             _dbConnection = dbConnection;
+            _hostEnvironment = hostEnvironment;
         }
 
         public async Task<List<CategoryModel>> GetMyAsync(int userId, string? like, CategoriesSortOrder sortOrder)

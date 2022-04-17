@@ -7,10 +7,12 @@ namespace ToDoList.Repositories
     public class ToDoRepository : BaseDapperRepository<ToDoModel>
     {
         private readonly IDbConnection _dbConnection;
+        private readonly IHostEnvironment _hostEnvironment;
 
-        public ToDoRepository(IDbConnection dbConnection) : base(dbConnection)
+        public ToDoRepository(IDbConnection dbConnection, IHostEnvironment hostEnvironment) : base(dbConnection, hostEnvironment)
         {
             _dbConnection = dbConnection;
+            _hostEnvironment = hostEnvironment;
         }
 
         public override async Task<ToDoModel> CreateAsync(ToDoModel toDo)

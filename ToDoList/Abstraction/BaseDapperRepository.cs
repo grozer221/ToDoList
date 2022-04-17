@@ -7,14 +7,16 @@ namespace ToDoList.Abstraction
     public class BaseDapperRepository<T> : IBaseRepository<T> where T : BaseModel
     {
         private readonly IDbConnection _dbConnection;
+        private readonly IHostEnvironment _hostEnvironment;
         public static readonly string ModelNameWithrouSuffix = typeof(T).Name.ReplaceInEnd("Model", string.Empty);
         public static readonly string TableName = new Pluralizer().Pluralize(ModelNameWithrouSuffix);
 
         public int PageSize { get => 2; }
 
-        public BaseDapperRepository(IDbConnection dbConnection)
+        public BaseDapperRepository(IDbConnection dbConnection, IHostEnvironment hostEnvironment)
         {
             _dbConnection = dbConnection;
+            _hostEnvironment = hostEnvironment;
         }
 
         public virtual async Task<T> GetByIdAsync(int id)
@@ -34,8 +36,8 @@ namespace ToDoList.Abstraction
             var columns = GetColumns();
             var stringOfColumns = string.Join(", ", columns);
             var stringOfParameters = string.Join(", ", columns.Select(c => "@" + c));
-            string query = $"insert into {TableName} ({stringOfColumns}) values ({stringOfParameters}) " +
-                "SELECT CAST(SCOPE_IDENTITY() as int)";
+            string query = $"insert into {TableName} ({stringOfColumns}) values ({stringOfParameters});";
+            query += _hostEnvironment.IsDevelopment() ? "SELECT CAST(SCOPE_IDENTITY() as int);" : "SELECT LAST_INSERT_ID();";
             DateTime dateTimeNow = DateTime.Now;
             baseModel.CreatedAt = dateTimeNow;
             baseModel.UpdatedAt = dateTimeNow;
