@@ -7,8 +7,10 @@ namespace ToDoList.Abstraction
     public class BaseDapperRepository<T> : IBaseRepository<T> where T : BaseModel
     {
         private readonly IDbConnection _dbConnection;
-        public static readonly string ModelNameWithrouSuffix = typeof(T).Name.ReplaceInEnd("Model", "");
+        public static readonly string ModelNameWithrouSuffix = typeof(T).Name.ReplaceInEnd("Model", string.Empty);
         public static readonly string TableName = new Pluralizer().Pluralize(ModelNameWithrouSuffix);
+
+        public int PageSize { get => 2; }
 
         public BaseDapperRepository(IDbConnection dbConnection)
         {
@@ -32,7 +34,7 @@ namespace ToDoList.Abstraction
             var columns = GetColumns();
             var stringOfColumns = string.Join(", ", columns);
             var stringOfParameters = string.Join(", ", columns.Select(c => "@" + c));
-            string query = $"insert into {TableName} ({stringOfColumns}) values ({stringOfParameters})" +
+            string query = $"insert into {TableName} ({stringOfColumns}) values ({stringOfParameters}) " +
                 "SELECT CAST(SCOPE_IDENTITY() as int)";
             DateTime dateTimeNow = DateTime.Now;
             baseModel.CreatedAt = dateTimeNow;

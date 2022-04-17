@@ -2,6 +2,7 @@
 {
     public interface IBaseRepository<T> where T : BaseModel
     {
+        int PageSize { get; }
         Task<T> GetByIdAsync(int id);
         Task<List<T>> GetAsync();
         Task<T> CreateAsync(T baseModel);

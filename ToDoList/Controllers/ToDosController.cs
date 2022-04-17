@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ToDoList.Enums;
+using ToDoList.Services;
 using ToDoList.ViewModels.ToDos;
 
 namespace ToDoList.Controllers
@@ -17,9 +19,10 @@ namespace ToDoList.Controllers
         }
 
         // GET: ToDosController
-        public async Task<IActionResult> Index(string? like)
+        public async Task<IActionResult> Index(string? like, ToDosSortOrder sortOrder)
         {
-            return View(await _toDoRepository.GetWithCategory(like ?? ""));
+            int currentUserId = int.Parse(HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultIdClaimType).Value);
+            return View(await _toDoRepository.GetMyWithCategory(currentUserId, like, sortOrder));
         }
 
         // GET: ToDosController/Create
@@ -38,6 +41,7 @@ namespace ToDoList.Controllers
         {
             if (ModelState.IsValid)
             {
+                toDo.UserId = int.Parse(HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultIdClaimType).Value);
                 await _toDoRepository.CreateAsync(toDo);
                 return RedirectToAction(nameof(Index));
             }
@@ -50,6 +54,14 @@ namespace ToDoList.Controllers
             ToDoModel toDo = await _toDoRepository.GetByIdAsync(id);
             if (toDo == null)
                 return NotFound();
+
+            int currentUserId = int.Parse(HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultIdClaimType).Value);
+            if (toDo.UserId != currentUserId)
+            {
+                TempData["Error"] = "You dont have access to edit it.";
+                return RedirectToAction(nameof(Index));
+            }
+
             ToDosEditViewModel toDosEditViewModel = new ToDosEditViewModel();
             toDosEditViewModel.Categories = new List<CategoryModel> { new CategoryModel { Name = "--Select category--" } };
             toDosEditViewModel.Categories.AddRange(await _categoryRepository.GetAsync());
@@ -66,18 +78,28 @@ namespace ToDoList.Controllers
             toDosEditViewModel.Categories = new List<CategoryModel> { new CategoryModel { Name = "--Select category--" } };
             toDosEditViewModel.Categories.AddRange(await _categoryRepository.GetAsync());
             toDosEditViewModel.ToDo = toDo;
+
+            int currentUserId = int.Parse(HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultIdClaimType).Value);
+            var checkAccessTodo = await _toDoRepository.GetByIdAsync(toDo.Id);
+            if(checkAccessTodo.UserId != currentUserId)
+            {
+                ModelState.AddModelError("", "You dont have access to edit it");
+                return View(toDosEditViewModel);
+            }
+            toDosEditViewModel.ToDo.UserId = currentUserId;
+
             if (ModelState.IsValid)
             {
                 try
                 {
                     await _toDoRepository.UpdateAsync(toDo);
+                    return RedirectToAction(nameof(Index));
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     ModelState.AddModelError("", ex.Message);
                     return View(toDosEditViewModel);
                 }
-                return RedirectToAction(nameof(Index));
             }
             return View(toDosEditViewModel);
         }
@@ -88,6 +110,14 @@ namespace ToDoList.Controllers
             ToDoModel toDo = await _toDoRepository.GetByIdAsync(id);
             if (toDo == null)
                 return NotFound();
+
+            int currentUserId = int.Parse(HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultIdClaimType).Value);
+            if (toDo.UserId != currentUserId)
+            {
+                TempData["Error"] = "You dont have access to delete it.";
+                return RedirectToAction(nameof(Index));
+            }
+
             return View(toDo);
         }
 
@@ -99,6 +129,12 @@ namespace ToDoList.Controllers
             ToDoModel toDo = await _toDoRepository.GetByIdAsync(id);
             if (toDo == null)
                 return NotFound();
+            int currentUserId = int.Parse(HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultIdClaimType).Value);
+            if(toDo.UserId != currentUserId)
+            {
+                TempData["Error"] = "You dont have access to delete it.";
+                return View(toDo);
+            }
             await _toDoRepository.RemoveAsync(toDo.Id);
             return RedirectToAction(nameof(Index));
         }
@@ -110,6 +146,13 @@ namespace ToDoList.Controllers
             ToDoModel toDo = await _toDoRepository.GetByIdAsync(id);
             if (toDo == null)
                 return NotFound();
+
+            int currentUserId = int.Parse(HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultIdClaimType).Value);
+            if (toDo.UserId != currentUserId)
+            {
+                return Forbid();
+            }
+
             toDo.IsDone = isDone;
             await _toDoRepository.UpdateAsync(toDo);
             return Ok();

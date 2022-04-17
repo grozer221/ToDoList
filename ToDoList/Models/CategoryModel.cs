@@ -6,6 +6,13 @@ namespace ToDoList.Models
     {
         [Required(ErrorMessage = "Name is required")]
         public string Name { get; set; }
+
         public List<ToDoModel> ToDos { get; set; } = new List<ToDoModel>();
+
+
+        [Display(Name = "User")]
+        public int? UserId { get; set; }
+
+        public UserModel? User { get; set; }
     }
 }

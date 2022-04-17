@@ -5,6 +5,7 @@
 	constraint AK_Categories_Name unique([Name]),
 	[CreatedAt] datetime not null,
 	[UpdatedAt] datetime not null,
+	[UserId] int foreign key ([UserId]) references Users(Id) on delete set null,
 )
 
 create table [dbo].[ToDos]
@@ -15,7 +16,8 @@ create table [dbo].[ToDos]
 	[IsDone] tinyint default 0,
 	[CreatedAt] datetime not null,
 	[UpdatedAt] datetime not null,
-	[CategoryId] int foreign key ([CategoryId]) references Categories(Id) on delete set null
+	[CategoryId] int foreign key ([CategoryId]) references Categories(Id) on delete set null,
+	[UserId] int foreign key ([UserId]) references Users(Id) on delete set null,
 )
 
 create table [dbo].[Users]

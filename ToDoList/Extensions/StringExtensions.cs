@@ -1,4 +1,6 @@
-﻿namespace ToDoList.Extensions
+﻿using System.Text.RegularExpressions;
+
+namespace ToDoList.Extensions
 {
     public static class StringExtensions
     {
@@ -9,8 +11,12 @@
             if (place == -1 || place < source.Length - find.Length)
                 return source;
 
-            string result = source.Remove(place, find.Length).Insert(place, replace);
-            return result;
+            return source.Remove(place, find.Length).Insert(place, replace);
+        }
+
+        public static string SplitCamelCase(this string str)
+        {
+            return Regex.Replace(str, "(\\B[A-Z])", " $1");
         }
     }
 }

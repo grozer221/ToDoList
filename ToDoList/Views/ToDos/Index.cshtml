@@ -1,4 +1,5 @@
-﻿@model IEnumerable<ToDoModel>
+﻿@using ToDoList.Enums
+@model IEnumerable<ToDoModel>
 
 @{
     ViewData["Title"] = "ToDos";
@@ -14,8 +15,16 @@
     <div class="col-10">
         <form method="get">
             <div class="row">
-                <div class="col-11">
-                    <input id="like" name="like" class="form-control" />
+                <div class="col-4">
+                    <select name="sortOrder" id="sortOrder" class="form-control">
+                        @foreach (var sortOrderName in Enum.GetNames(typeof(ToDosSortOrder)))
+                        {
+                            <option value="@sortOrderName">@sortOrderName.SplitCamelCase()</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-7">
+                    <input id="like" name="like" class="form-control" placeholder="Search" />
                 </div>
                 <div class="col-1">
                     <button type="submit" class="btn btn-primary">Search</button>
@@ -30,9 +39,6 @@
         <tr>
             <th>
                 @Html.DisplayNameFor(model => model.IsDone)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Id)
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.Name)
@@ -56,9 +62,6 @@
                         <input type="checkbox" class="custom-control-input switch" id="switch_@item.Id" @(item.IsDone ? "checked" : "")>
                         <label class="custom-control-label" for="switch_@item.Id"></label>
                     </div>
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Id)
                 </td>
                 <td>
                     @Html.DisplayFor(modelItem => item.Name)
@@ -100,6 +103,7 @@
 
     $(document).ready(function () {
         $('#like').val('@ViewContext.HttpContext.Request.Query["like"]');
+        $('#sortOrder').val('@ViewContext.HttpContext.Request.Query["sortOrder"]' || '@ToDosSortOrder.DateDesc');
     });
 </script>
 }

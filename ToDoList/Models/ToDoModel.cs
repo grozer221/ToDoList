@@ -16,5 +16,10 @@ namespace ToDoList.Models
         public int? CategoryId { get; set; }
 
         public CategoryModel? Category { get; set; }
+        
+        [Display(Name = "User")]
+        public int? UserId { get; set; }
+
+        public UserModel? User { get; set; }
     }
 }

@@ -12,6 +12,7 @@ namespace ToDoList.Controllers
         private readonly UserRepository _userRepository;
         private readonly AccountService _accountService;
         private readonly EmailService _emailService;
+
         public AccountController(UserRepository userRepository, AccountService accountService, EmailService emailService)
         {
             _userRepository = userRepository;
