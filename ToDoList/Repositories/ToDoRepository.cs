@@ -4,73 +4,124 @@ using ToDoList.Enums;
 
 namespace ToDoList.Repositories
 {
-    public class ToDoRepository : BaseDapperRepository<ToDoModel>
+    public class ToDoRepository
     {
         private readonly IDbConnection _dbConnection;
         private readonly IHostEnvironment _hostEnvironment;
 
-        public ToDoRepository(IDbConnection dbConnection, IHostEnvironment hostEnvironment) : base(dbConnection, hostEnvironment)
+        public ToDoRepository(IDbConnection dbConnection, IHostEnvironment hostEnvironment)
         {
             _dbConnection = dbConnection;
             _hostEnvironment = hostEnvironment;
         }
 
-        public override async Task<ToDoModel> CreateAsync(ToDoModel toDo)
+        public async Task<ToDoModel> GetByIdAsync(int id)
+        {
+            string query = $"select * from ToDos where id = @id";
+            return await _dbConnection.QueryFirstOrDefaultAsync<ToDoModel>(query, new { id });
+        }
+
+        public async Task<List<ToDoModel>> GetAsync()
+        {
+            string query = $"select * from ToDos";
+            return (await _dbConnection.QueryAsync<ToDoModel>(query)).ToList();
+        }
+
+        public async Task<ToDoModel> CreateAsync(ToDoModel toDo)
         {
             if (toDo.CategoryId == 0)
                 toDo.CategoryId = null;
-            return await base.CreateAsync(toDo);
+            DateTime dateTimeNow = DateTime.Now;
+            toDo.CreatedAt = dateTimeNow;
+            toDo.UpdatedAt = dateTimeNow;
+            string query = $@"insert into Todos 
+                        (Name, IsDone, Deadline, CategoryId, UserId, CreatedAt, UpdatedAt) 
+                        values (@Name, @IsDone, @Deadline, @CategoryId, @UserId, @CreatedAt, @UpdatedAt);";
+            query += _hostEnvironment.IsDevelopment() ? "SELECT CAST(SCOPE_IDENTITY() as int);" : "SELECT LAST_INSERT_ID();";
+            toDo.Id = await _dbConnection.QuerySingleAsync<int>(query, toDo);
+            return toDo;
         }
 
-        public override async Task UpdateAsync(ToDoModel toDo)
+        public async Task<ToDoModel> UpdateAsync(ToDoModel toDo)
         {
+            ToDoModel toDoIsExists = await GetByIdAsync(toDo.Id);
+            if (toDoIsExists == null)
+                throw new Exception($"ToDo with id {toDo.Id} does not exists");
+
             if (toDo.CategoryId == 0)
                 toDo.CategoryId = null;
-            await base.UpdateAsync(toDo);
+
+            string query = @"update ToDos 
+                            set Name = @Name, IsDone = @IsDone, Deadline = @Deadline, CategoryId = @CategoryId, UpdatedAt = @UpdatedAt 
+                            where id = @id";
+            toDo.UpdatedAt = DateTime.Now;
+            await _dbConnection.ExecuteAsync(query, toDo);
+            return toDo;
         }
 
-        public async Task<List<ToDoModel>> GetMyWithCategory(int userId, string? like = null, ToDosSortOrder sortOrder = ToDosSortOrder.DateDesc)
+        public async Task RemoveAsync(int id)
+        {
+            ToDoModel toDoIsExists = await GetByIdAsync(id);
+            if (toDoIsExists == null)
+                throw new Exception($"ToDo with id {id} does not exists");
+
+            string query = $"delete from ToDos where id = @id";
+            await _dbConnection.ExecuteAsync(query, new { id });
+        }
+
+        public async Task<List<ToDoModel>> GetMyWithCategory(int userId, string? like = null, ToDosSortOrder sortOrder = ToDosSortOrder.DeadlineAcs, int? categoryId = null)
         {
             like = like ?? "";
             like = $"%{like}%";
-            string categoryTableName = new CategoryModel().GetTableName();
-            string query = $"select * from {TableName} " +
-                           $"left join {categoryTableName} on {TableName}.{nameof(ToDoModel.CategoryId)} = {categoryTableName}.{nameof(CategoryModel.Id)} " +
-                           $"where {TableName}.{nameof(ToDoModel.Name)} like @like and {TableName}.{nameof(ToDoModel.UserId)} = {userId} ";
+            string query = @"select * from Todos 
+                            left join Categories on ToDos.categoryId = Categories.Id 
+                            where ToDos.Name like @like and ToDos.UserId = @userId ";
 
-            //int total = await _dbConnection.QueryFirstOrDefaultAsync<int>(query.Replace("*", "count(*)"), new { like });
+            if (categoryId != null && categoryId != 0)
+                query += @"and ToDos.CategoryId = @categoryId ";
 
             switch (sortOrder)
             {
-                case ToDosSortOrder.NameDesc:
-                    query += $"order by {TableName}.{nameof(ToDoModel.Name)} desc";
-                    break;
-                case ToDosSortOrder.NameAsc:
-                    query += $"order by {TableName}.{nameof(ToDoModel.Name)} asc";
+                case ToDosSortOrder.DeadlineAcs:
+                    query += GetOrderBy("Deadline", "asc");
                     break;
                 case ToDosSortOrder.DeadlineDecs:
-                    query += $"order by {TableName}.{nameof(ToDoModel.Deadline)} desc";
+                    query += GetOrderBy("Deadline", "desc");
                     break;
-                case ToDosSortOrder.DeadlineAcs :
-                    query += $"order by {TableName}.{nameof(ToDoModel.Deadline)} asc";
+                case ToDosSortOrder.NameAsc:
+                    query += GetOrderBy("Name", "asc");
+                    break;
+                case ToDosSortOrder.NameDesc:
+                    query += GetOrderBy("Name", "desc");
                     break;
                 case ToDosSortOrder.DateAsc:
-                    query += $"order by {TableName}.{nameof(ToDoModel.CreatedAt)} asc";
+                    query += GetOrderBy("CreatedAt", "asc");
                     break;
                 case ToDosSortOrder.DateDesc:
-                    query += $"order by {TableName}.{nameof(ToDoModel.CreatedAt)} desc";
+                    query += GetOrderBy("CreatedAt", "desc");
                     break;
             }
 
-            //int offset = PageSize * (page - 1);
-            //query += $" offset {offset} rows fetch next {PageSize} rows only";
-            var entities = (await _dbConnection.QueryAsync<ToDoModel, CategoryModel, ToDoModel>(query, (toDo, category) =>
+            return (await _dbConnection.QueryAsync<ToDoModel, CategoryModel, ToDoModel>(query, (toDo, category) =>
             {
                 toDo.CategoryId = category?.Id;
                 toDo.Category = category;
                 return toDo;
-            }, new { like })).ToList();
-            return entities;
+            }, new { like, userId, categoryId })).ToList(); ;
+        }
+
+        private string GetOrderBy(string columnName, string typeColumnName)
+        {
+            string dateTimeIfNull;
+            if (string.Compare(typeColumnName, "desc") == 0)
+                dateTimeIfNull = "1900-01-01 00:00:00";
+            else
+                dateTimeIfNull = "9999-01-01 00:00:00";
+            if (string.Compare(columnName, "Deadline", true) == 0)
+                return $@"order by ToDos.IsDone asc, 
+                        CASE WHEN ToDos.{columnName} IS NULL THEN '{dateTimeIfNull}' ELSE ToDos.{columnName} END {typeColumnName}";
+            return $@"order by ToDos.IsDone asc, 
+                    ToDos.{columnName} {typeColumnName}";
         }
     }
 }

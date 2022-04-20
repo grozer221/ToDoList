@@ -31,13 +31,13 @@
                 @Html.DisplayNameFor(model => model.ToDos[0].IsDone)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.ToDos[0].Id)
-            </th>
-            <th>
                 @Html.DisplayNameFor(model => model.ToDos[0].Name)
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.ToDos[0].Deadline)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ToDos[0].CreatedAt)
             </th>
             <th></th>
         </tr>
@@ -53,13 +53,13 @@
                     </div>
                 </td>
                 <td>
-                    @Html.DisplayFor(modelItem => toDo.Id)
-                </td>
-                <td>
                     @Html.DisplayFor(modelItem => toDo.Name)
                 </td>
                 <td>
                     @Html.DisplayFor(modelItem => toDo.Deadline)
+                </td>
+                <td>
+                    @Html.DisplayFor(model => model.ToDos[0].CreatedAt)
                 </td>
                 <td>
                     <a asp-area="" asp-controller="Todos" asp-action="Edit" asp-route-id="@toDo.Id" class="btn btn-dark">Edit</a>

@@ -8,7 +8,7 @@ namespace ToDoList.Abstraction
     {
         private readonly IDbConnection _dbConnection;
         private readonly IHostEnvironment _hostEnvironment;
-        public static readonly string ModelNameWithrouSuffix = typeof(T).Name.ReplaceInEnd("Model", string.Empty);
+        public static readonly string ModelNameWithrouSuffix = nameof(T).ReplaceInEnd("Model", string.Empty);
         public static readonly string TableName = new Pluralizer().Pluralize(ModelNameWithrouSuffix);
 
         public int PageSize { get => 2; }
@@ -33,14 +33,14 @@ namespace ToDoList.Abstraction
         
         public virtual async Task<T> CreateAsync(T baseModel)
         {
+            DateTime dateTimeNow = DateTime.Now;
+            baseModel.CreatedAt = dateTimeNow;
+            baseModel.UpdatedAt = dateTimeNow;
             var columns = GetColumns();
             var stringOfColumns = string.Join(", ", columns);
             var stringOfParameters = string.Join(", ", columns.Select(c => "@" + c));
             string query = $"insert into {TableName} ({stringOfColumns}) values ({stringOfParameters});";
             query += _hostEnvironment.IsDevelopment() ? "SELECT CAST(SCOPE_IDENTITY() as int);" : "SELECT LAST_INSERT_ID();";
-            DateTime dateTimeNow = DateTime.Now;
-            baseModel.CreatedAt = dateTimeNow;
-            baseModel.UpdatedAt = dateTimeNow;
             baseModel.Id = await _dbConnection.QuerySingleAsync<int>(query, baseModel);
             return baseModel;
         }

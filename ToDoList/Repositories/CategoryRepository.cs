@@ -4,40 +4,52 @@ using ToDoList.Enums;
 
 namespace ToDoList.Repositories
 {
-    public class CategoryRepository : BaseDapperRepository<CategoryModel>
+    public class CategoryRepository 
     {
         private readonly IDbConnection _dbConnection;
         private readonly IHostEnvironment _hostEnvironment;
-        public CategoryRepository(IDbConnection dbConnection, IHostEnvironment hostEnvironment) : base(dbConnection, hostEnvironment)
+        public CategoryRepository(IDbConnection dbConnection, IHostEnvironment hostEnvironment)
         {
             _dbConnection = dbConnection;
             _hostEnvironment = hostEnvironment;
+        }
+
+        public async Task<CategoryModel> GetByIdAsync(int id)
+        {
+            string query = $"select * from Categories where id = @id";
+            return await _dbConnection.QueryFirstOrDefaultAsync<CategoryModel>(query, new { id });
+        }
+
+        public async Task<List<CategoryModel>> GetAsync()
+        {
+            string query = $"select * from Categories";
+            return (await _dbConnection.QueryAsync<CategoryModel>(query)).ToList();
         }
 
         public async Task<List<CategoryModel>> GetMyAsync(int userId, string? like, CategoriesSortOrder sortOrder)
         {
             like = like ?? "";
             like = $"%{like}%";
-            string query = $"select * from {TableName} " +
-                           $"where {TableName}.{nameof(CategoryModel.Name)} like @like and {TableName}.{nameof(CategoryModel.UserId)} = {userId} ";
+            string query = @"select * from Categories
+                            where Categories.Name like @like and Categories.UserId = @userId ";
 
             switch (sortOrder)
             {
                 case CategoriesSortOrder.NameDesc:
-                    query += $"order by {TableName}.{nameof(CategoryModel.Name)} desc";
+                    query += $"order by Categories.Name desc";
                     break;
                 case CategoriesSortOrder.NameAsc:
-                    query += $"order by {TableName}.{nameof(CategoryModel.Name)} asc";
+                    query += $"order by Categories.Name asc";
                     break;
                 case CategoriesSortOrder.DateAsc:
-                    query += $"order by {TableName}.{nameof(CategoryModel.CreatedAt)} asc";
+                    query += $"order by Categories.CreatedAt asc";
                     break;
                 case CategoriesSortOrder.DateDesc:
-                    query += $"order by {TableName}.{nameof(CategoryModel.CreatedAt)} desc";
+                    query += $"order by Categories.CreatedAt desc";
                     break;
             }
 
-            return (await _dbConnection.QueryAsync<CategoryModel>(query, new { like })).ToList();
+            return (await _dbConnection.QueryAsync<CategoryModel>(query, new { like, userId })).ToList();
         }
 
         public async Task<CategoryModel> GetByIdWithTodosAsync(int id)
@@ -48,8 +60,8 @@ namespace ToDoList.Repositories
         public async Task<List<CategoryModel>> GetWithTodosAsync()
         {
             string toDoTableName = new ToDoModel().GetTableName();
-            string query = $"select * from {TableName} " +
-                           $"left join {toDoTableName} on {TableName}.id = {toDoTableName}.categoryId";
+            string query = @"select * from Categories 
+                            left join ToDos on Categories.Id = ToDos.CategoryId";
             var lookup = new Dictionary<int, CategoryModel>();
             return (await _dbConnection.QueryAsync<CategoryModel, ToDoModel, CategoryModel>(query, (c, toDo) =>
             {
@@ -58,10 +70,48 @@ namespace ToDoList.Repositories
                 {
                     lookup.Add(c.Id, category = c);
                 }
-                if(toDo != null)
+                if (toDo != null)
                     category.ToDos.Add(toDo);
                 return category;
             })).ToList();
+        }
+
+        public async Task<CategoryModel> CreateAsync(CategoryModel category)
+        {
+            DateTime dateTimeNow = DateTime.Now;
+            category.CreatedAt = dateTimeNow;
+            category.UpdatedAt = dateTimeNow;
+            string query = $@"insert into Categories 
+                            (Name, UserId, CreatedAt, UpdatedAt) 
+                            values (@Name, @UserId, @CreatedAt, @UpdatedAt);";
+            query += _hostEnvironment.IsDevelopment() ? "SELECT CAST(SCOPE_IDENTITY() as int);" : "SELECT LAST_INSERT_ID();";
+            category.Id = await _dbConnection.QuerySingleAsync<int>(query, category);
+            return category;
+        }
+
+        public async Task<CategoryModel> UpdateAsync(CategoryModel category)
+        {
+            CategoryModel categoryIsExists = await GetByIdAsync(category.Id);
+            if (categoryIsExists == null)
+                throw new Exception($"category with id {category.Id} does not exists");
+
+            string query = @"update Categories 
+                            set Name = @Name, UpdatedAt = @UpdatedAt
+                            where id = @id";
+            category.UpdatedAt = DateTime.Now;
+            await _dbConnection.ExecuteAsync(query, category);
+            return category;
+        }
+
+        public async Task RemoveAsync(int id)
+        {
+            CategoryModel categoryIsExists = await GetByIdAsync(id);
+            if (categoryIsExists == null)
+                throw new Exception($"Category with id {id} does not exists");
+
+            string query = @"delete from Categories 
+                            where id = @id";
+            await _dbConnection.ExecuteAsync(query, new { id });
         }
     }
 }

@@ -2,11 +2,11 @@
 {
     public enum ToDosSortOrder
     {
-        DateDesc,
-        DateAsc,
-        DeadlineDecs,
         DeadlineAcs,
-        NameDesc,
+        DeadlineDecs,
+        DateAsc,
+        DateDesc,
         NameAsc,
+        NameDesc,
     }
 }

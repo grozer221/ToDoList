@@ -14,11 +14,11 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddSingleton<IDbConnection>(AppDbContext.GetDbConnection(builder.Environment.IsDevelopment()));
-builder.Services.AddSingleton(typeof(IBaseRepository<>), typeof(BaseDapperRepository<>));
-builder.Services.AddSingleton<ToDoRepository>();
-builder.Services.AddSingleton<CategoryRepository>();
-builder.Services.AddSingleton<UserRepository>();
+builder.Services.AddScoped<IDbConnection>(options => AppDbContext.GetDbConnection(builder.Environment.IsDevelopment()));
+//builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseDapperRepository<>));
+builder.Services.AddScoped<ToDoRepository>();
+builder.Services.AddScoped<CategoryRepository>();
+builder.Services.AddScoped<UserRepository>();
 
 builder.Services.AddSingleton<EmailService>();
 builder.Services.AddSingleton<AccountService>();

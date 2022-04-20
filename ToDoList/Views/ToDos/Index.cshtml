@@ -1,8 +1,17 @@
 ﻿@using ToDoList.Enums
-@model IEnumerable<ToDoModel>
+@using ToDoList.ViewModels.ToDos
+@model ToDosIndexViewModel
 
 @{
     ViewData["Title"] = "ToDos";
+    string? like = ViewContext.HttpContext.Request.Query["like"];
+    string sortOrder = ViewContext.HttpContext.Request.Query["sortOrder"];
+    if (string.IsNullOrEmpty(sortOrder))
+        sortOrder = ToDosSortOrder.DeadlineAcs.ToString();
+    string categoryIdString = ViewContext.HttpContext.Request.Query["categoryId"];
+    int categoryId;
+    if (!int.TryParse(categoryIdString, out categoryId))
+        categoryId = 0;
 }
 
 <h1>ToDos</h1>
@@ -15,16 +24,24 @@
     <div class="col-10">
         <form method="get">
             <div class="row">
-                <div class="col-4">
-                    <select name="sortOrder" id="sortOrder" class="form-control">
-                        @foreach (var sortOrderName in Enum.GetNames(typeof(ToDosSortOrder)))
+                <div class="col-3">
+                    <select name="categoryId" id="categoryId" class="form-control" >
+                        @foreach (var category in Model.Categories)
                         {
-                            <option value="@sortOrderName">@sortOrderName.SplitCamelCase()</option>
+                            <option selected=@((bool)(categoryId == category.Id)) value="@category.Id">@category.Name</option>
                         }
                     </select>
                 </div>
-                <div class="col-7">
-                    <input id="like" name="like" class="form-control" placeholder="Search" />
+                <div class="col-3">
+                    <select name="sortOrder" id="sortOrder" class="form-control">
+                        @foreach (var sortOrderName in Enum.GetNames(typeof(ToDosSortOrder)))
+                        {
+                            <option selected=@((bool)(sortOrder == sortOrderName)) value="@sortOrderName">@sortOrderName.SplitCamelCase()</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-5">
+                    <input id="like" name="like" class="form-control" placeholder="Search" value=@like>
                 </div>
                 <div class="col-1">
                     <button type="submit" class="btn btn-primary">Search</button>
@@ -38,49 +55,50 @@
     <thead>
         <tr>
             <th>
-                @Html.DisplayNameFor(model => model.IsDone)
+                @Html.DisplayNameFor(model => model.ToDos[0].IsDone)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Name)
+                @Html.DisplayNameFor(model => model.ToDos[0].Name)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Deadline)
+                @Html.DisplayNameFor(model => model.ToDos[0].Deadline)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Category)
+                @Html.DisplayNameFor(model => model.ToDos[0].Category)
             </th>
-            <th>Date</th>
+            <th>
+                @Html.DisplayNameFor(model => model.ToDos[0].CreatedAt)
+            </th>
             <th></th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var item in Model)
+        @foreach (var toDo in Model.ToDos)
         {
-            <tr @(item.IsDone ? "class=toDoDone" : "") id="tr_@item.Id">
+            <tr @(toDo.IsDone ? "class=toDoDone" : "") id="tr_@toDo.Id">
                 <td>
                     <div class="custom-control custom-switch">
-                        <input type="checkbox" class="custom-control-input switch" id="switch_@item.Id" @(item.IsDone ? "checked" : "")>
-                        <label class="custom-control-label" for="switch_@item.Id"></label>
+                        <input type="checkbox" class="custom-control-input switch" id="switch_@toDo.Id" @(toDo.IsDone ? "checked" : "")>
+                        <label class="custom-control-label" for="switch_@toDo.Id"></label>
                     </div>
                 </td>
                 <td>
-                    @Html.DisplayFor(modelItem => item.Name)
+                    @Html.DisplayFor(modelItem => toDo.Name)
                 </td>
                 <td>
-                    @Html.DisplayFor(modelItem => item.Deadline)
+                    @Html.DisplayFor(modelItem => toDo.Deadline)
                 </td>
                 <td>
-                    <a class="nav-link" asp-area="" asp-controller="Categories" asp-action="Details" asp-route-id="@item.CategoryId">
-                        @Html.DisplayFor(modelItem => item.Category.Name)
+                    <a class="nav-link" asp-area="" asp-controller="Categories" asp-action="Details" asp-route-id="@toDo.CategoryId">
+                        @Html.DisplayFor(modelItem => toDo.Category.Name)
                     </a>
                 </td>
                 <td>
-                    <div>@Html.DisplayNameFor(modelItem => item.CreatedAt) @Html.DisplayFor(modelItem => item.CreatedAt)</div>
-                    <div>@Html.DisplayNameFor(modelItem => item.UpdatedAt) @Html.DisplayFor(modelItem => item.UpdatedAt)</div>
+                    @Html.DisplayFor(modelItem => toDo.CreatedAt)
                 </td>
                 <td>
-                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-dark">Edit</a>
-                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger">Delete</a>
+                    <a asp-action="Edit" asp-route-id="@toDo.Id" class="btn btn-dark">Edit</a>
+                    <a asp-action="Delete" asp-route-id="@toDo.Id" class="btn btn-danger">Delete</a>
                 </td>
             </tr>
         }
@@ -101,9 +119,10 @@
        });
     });
 
-    $(document).ready(function () {
-        $('#like').val('@ViewContext.HttpContext.Request.Query["like"]');
-        $('#sortOrder').val('@ViewContext.HttpContext.Request.Query["sortOrder"]' || '@ToDosSortOrder.DateDesc');
-    });
+    //$(document).ready(function () {
+    //    $('#like').val('@ViewContext.HttpContext.Request.Query["like"]');
+    //    $('#sortOrder').val('@ViewContext.HttpContext.Request.Query["sortOrder"]' || '@ToDosSortOrder.DeadlineAcs');
+    //    $('#categoryId').val('@ViewContext.HttpContext.Request.Query["categoryId"]' || 0);
+    //});
 </script>
 }
