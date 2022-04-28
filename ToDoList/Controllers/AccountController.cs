@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using ToDoList.Repositories.Abstraction;
 using ToDoList.Services;
 using ToDoList.ViewModels.Accounts;
 
@@ -9,11 +10,11 @@ namespace ToDoList.Controllers
     [Route("[controller]/[action]")]
     public class AccountController : Controller
     {
-        private readonly UserRepository _userRepository;
+        private readonly IUserRepository _userRepository;
         private readonly AccountService _accountService;
         private readonly EmailService _emailService;
 
-        public AccountController(UserRepository userRepository, AccountService accountService, EmailService emailService)
+        public AccountController(IUserRepository userRepository, AccountService accountService, EmailService emailService)
         {
             _userRepository = userRepository;
             _accountService = accountService;

@@ -1,17 +1,16 @@
 ﻿using Dapper;
 using System.Data;
 using ToDoList.Enums;
+using ToDoList.Repositories.Abstraction;
 
-namespace ToDoList.Repositories
+namespace ToDoList.Repositories.MSSql
 {
-    public class CategoryRepository 
+    public class MSSqlCategoryRepository : ICategoryRepository
     {
         private readonly IDbConnection _dbConnection;
-        private readonly IHostEnvironment _hostEnvironment;
-        public CategoryRepository(IDbConnection dbConnection, IHostEnvironment hostEnvironment)
+        public MSSqlCategoryRepository(IDbConnection dbConnection)
         {
             _dbConnection = dbConnection;
-            _hostEnvironment = hostEnvironment;
         }
 
         public async Task<CategoryModel> GetByIdAsync(int id)
@@ -59,7 +58,6 @@ namespace ToDoList.Repositories
 
         public async Task<List<CategoryModel>> GetWithTodosAsync()
         {
-            string toDoTableName = new ToDoModel().GetTableName();
             string query = @"select * from Categories 
                             left join ToDos on Categories.Id = ToDos.CategoryId";
             var lookup = new Dictionary<int, CategoryModel>();
@@ -83,8 +81,8 @@ namespace ToDoList.Repositories
             category.UpdatedAt = dateTimeNow;
             string query = $@"insert into Categories 
                             (Name, UserId, CreatedAt, UpdatedAt) 
-                            values (@Name, @UserId, @CreatedAt, @UpdatedAt);";
-            query += _hostEnvironment.IsDevelopment() ? "SELECT CAST(SCOPE_IDENTITY() as int);" : "SELECT LAST_INSERT_ID();";
+                            values (@Name, @UserId, @CreatedAt, @UpdatedAt);
+                            SELECT CAST(SCOPE_IDENTITY() as int);";
             category.Id = await _dbConnection.QuerySingleAsync<int>(query, category);
             return category;
         }

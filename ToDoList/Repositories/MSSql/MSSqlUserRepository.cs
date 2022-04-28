@@ -1,16 +1,15 @@
 ﻿using Dapper;
 using System.Data;
+using ToDoList.Repositories.Abstraction;
 
-namespace ToDoList.Repositories
+namespace ToDoList.Repositories.MSSql
 {
-    public class UserRepository
+    public class MSSqlUserRepository : IUserRepository
     {
         private readonly IDbConnection _dbConnection;
-        private readonly IHostEnvironment _hostEnvironment;
-        public UserRepository(IDbConnection dbConnection, IHostEnvironment hostEnvironment)
+        public MSSqlUserRepository(IDbConnection dbConnection)
         {
             _dbConnection = dbConnection;
-            _hostEnvironment = hostEnvironment;
         }
 
         public async Task<UserModel> GetByEmailAsync(string email)
@@ -38,10 +37,10 @@ namespace ToDoList.Repositories
             DateTime dateTimeNow = DateTime.Now;
             user.CreatedAt = dateTimeNow;
             user.UpdatedAt = dateTimeNow;
-            string query = $@"insert into Todos 
-                        (Email, Password, IsEmailConfirmed) 
-                        values (@Email, @Password, @IsEmailConfirmed);";
-            query += _hostEnvironment.IsDevelopment() ? "SELECT CAST(SCOPE_IDENTITY() as int);" : "SELECT LAST_INSERT_ID();";
+            string query = $@"insert into Users 
+                        (Email, Password, IsEmailConfirmed, CreatedAt, UpdatedAt) 
+                        values (@Email, @Password, @IsEmailConfirmed, @CreatedAt, @UpdatedAt);
+                        SELECT CAST(SCOPE_IDENTITY() as int);";
             user.Id = await _dbConnection.QuerySingleAsync<int>(query, user);
             return user;
         }
@@ -50,10 +49,10 @@ namespace ToDoList.Repositories
         {
             UserModel userIsExists = await GetByIdAsync(user.Id);
             if (userIsExists == null)
-                throw new Exception($"ToDo with id {user.Id} does not exists");
+                throw new Exception($"User with id {user.Id} does not exists");
 
             string query = @"update Users 
-                            set Email = @Email, Password = @Password, IsEmailConfirmed = @IsEmailConfirmed 
+                            set Email = @Email, Password = @Password, IsEmailConfirmed = @IsEmailConfirmed, UpdatedAt = @UpdatedAt
                             where id = @id";
             user.UpdatedAt = DateTime.Now;
             await _dbConnection.ExecuteAsync(query, user);

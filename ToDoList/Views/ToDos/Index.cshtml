@@ -4,6 +4,7 @@
 
 @{
     ViewData["Title"] = "ToDos";
+
     string? like = ViewContext.HttpContext.Request.Query["like"];
     string sortOrder = ViewContext.HttpContext.Request.Query["sortOrder"];
     if (string.IsNullOrEmpty(sortOrder))
@@ -15,7 +16,6 @@
 }
 
 <h1>ToDos</h1>
-
 
 <div class="row mb-2">
     <div class="col-2">
@@ -55,13 +55,16 @@
     <thead>
         <tr>
             <th>
-                @Html.DisplayNameFor(model => model.ToDos[0].IsDone)
+                @Html.DisplayNameFor(model => model.ToDos[0].IsComplete)
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.ToDos[0].Name)
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.ToDos[0].Deadline)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ToDos[0].DateComplete)
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.ToDos[0].Category)
@@ -75,10 +78,10 @@
     <tbody>
         @foreach (var toDo in Model.ToDos)
         {
-            <tr @(toDo.IsDone ? "class=toDoDone" : "") id="tr_@toDo.Id">
+            <tr @(toDo.IsComplete ? "class=toDoDone" : "") id="tr_@toDo.Id">
                 <td>
                     <div class="custom-control custom-switch">
-                        <input type="checkbox" class="custom-control-input switch" id="switch_@toDo.Id" @(toDo.IsDone ? "checked" : "")>
+                        <input type="checkbox" class="custom-control-input switch" id="switch_@toDo.Id" @(toDo.IsComplete ? "checked" : "")>
                         <label class="custom-control-label" for="switch_@toDo.Id"></label>
                     </div>
                 </td>
@@ -87,6 +90,9 @@
                 </td>
                 <td>
                     @Html.DisplayFor(modelItem => toDo.Deadline)
+                </td>
+                <td class="dateComplete">
+                    @Html.DisplayFor(modelItem => toDo.DateComplete)
                 </td>
                 <td>
                     <a class="nav-link" asp-area="" asp-controller="Categories" asp-action="Details" asp-route-id="@toDo.CategoryId">
@@ -112,17 +118,13 @@
 <script>
     $(".switch").change(function () {
        const id = this.id.replace("switch_", "");
-       const isDone = this.checked;
-       let url = `/ToDos/SwitchIsDone?id=${id}&isDone=${isDone}`;
-       $.post(url, null, function () {
-           $(`#tr_${id}`).toggleClass("toDoDone")
+       const isComplete = this.checked;
+       let url = `/ToDos/SwitchIsComplete?id=${id}&isComplete=${isComplete}`;
+       $.post(url, null, function (success) {
+           $(`#tr_${id}`).toggleClass("toDoDone");
+           const dateComplete = success.dateComplete && new Date(success.dateComplete)?.toLocaleString('uk').replace(',', '');
+           $(`#tr_${id} .dateComplete`).text(dateComplete);
        });
     });
-
-    //$(document).ready(function () {
-    //    $('#like').val('@ViewContext.HttpContext.Request.Query["like"]');
-    //    $('#sortOrder').val('@ViewContext.HttpContext.Request.Query["sortOrder"]' || '@ToDosSortOrder.DeadlineAcs');
-    //    $('#categoryId').val('@ViewContext.HttpContext.Request.Query["categoryId"]' || 0);
-    //});
 </script>
 }

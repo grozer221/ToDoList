@@ -1,18 +1,7 @@
-﻿using MySql.Data.MySqlClient;
-using System.Data;
-using System.Data.SqlClient;
-
-namespace ToDoList
+﻿namespace ToDoList
 {
     public class AppDbContext
     {
-        public static IDbConnection GetDbConnection(bool isDevelopment)
-        {
-            return isDevelopment
-                ? new SqlConnection(@"Data Source=(localdb)\MSSQLLocalDB;Initial Catalog=ToDoList;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False")
-                : new MySqlConnection(ConvertMySqlConnectionString(Environment.GetEnvironmentVariable("JAWSDB_URL")));
-        }
-
         public static string ConvertMySqlConnectionString(string connectionString)
         {
             connectionString = connectionString.Split("//")[1];

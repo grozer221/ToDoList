@@ -1,18 +1,17 @@
 ﻿using Dapper;
 using System.Data;
 using ToDoList.Enums;
+using ToDoList.Repositories.Abstraction;
 
-namespace ToDoList.Repositories
+namespace ToDoList.Repositories.MySql
 {
-    public class ToDoRepository
+    public class MySqlToDoRepository : IToDoRepository
     {
         private readonly IDbConnection _dbConnection;
-        private readonly IHostEnvironment _hostEnvironment;
 
-        public ToDoRepository(IDbConnection dbConnection, IHostEnvironment hostEnvironment)
+        public MySqlToDoRepository(IDbConnection dbConnection)
         {
             _dbConnection = dbConnection;
-            _hostEnvironment = hostEnvironment;
         }
 
         public async Task<ToDoModel> GetByIdAsync(int id)
@@ -35,9 +34,9 @@ namespace ToDoList.Repositories
             toDo.CreatedAt = dateTimeNow;
             toDo.UpdatedAt = dateTimeNow;
             string query = $@"insert into Todos 
-                        (Name, IsDone, Deadline, CategoryId, UserId, CreatedAt, UpdatedAt) 
-                        values (@Name, @IsDone, @Deadline, @CategoryId, @UserId, @CreatedAt, @UpdatedAt);";
-            query += _hostEnvironment.IsDevelopment() ? "SELECT CAST(SCOPE_IDENTITY() as int);" : "SELECT LAST_INSERT_ID();";
+                        (Name, IsComplete, Deadline, CategoryId, UserId, CreatedAt, UpdatedAt) 
+                        values (@Name, @IsComplete, @Deadline, @CategoryId, @UserId, @CreatedAt, @UpdatedAt);
+                        SELECT LAST_INSERT_ID();";
             toDo.Id = await _dbConnection.QuerySingleAsync<int>(query, toDo);
             return toDo;
         }
@@ -48,13 +47,22 @@ namespace ToDoList.Repositories
             if (toDoIsExists == null)
                 throw new Exception($"ToDo with id {toDo.Id} does not exists");
 
+            string query = @"update ToDos 
+                            set Name = @Name, IsComplete = @IsComplete, DateComplete = @DateComplete, Deadline = @Deadline, CategoryId = @CategoryId, UpdatedAt = @UpdatedAt 
+                            where id = @id";
+
             if (toDo.CategoryId == 0)
                 toDo.CategoryId = null;
 
-            string query = @"update ToDos 
-                            set Name = @Name, IsDone = @IsDone, Deadline = @Deadline, CategoryId = @CategoryId, UpdatedAt = @UpdatedAt 
-                            where id = @id";
-            toDo.UpdatedAt = DateTime.Now;
+            DateTime dateTimeNow = DateTime.Now;
+            if (!toDoIsExists.IsComplete && toDo.IsComplete)
+                toDo.DateComplete = dateTimeNow;
+            else if (toDoIsExists.IsComplete && !toDo.IsComplete)
+                toDo.DateComplete = null;
+            else
+                toDo.DateComplete = toDoIsExists.DateComplete;
+
+            toDo.UpdatedAt = dateTimeNow;
             await _dbConnection.ExecuteAsync(query, toDo);
             return toDo;
         }
@@ -94,11 +102,11 @@ namespace ToDoList.Repositories
                 case ToDosSortOrder.NameDesc:
                     query += GetOrderBy("Name", "desc");
                     break;
-                case ToDosSortOrder.DateAsc:
-                    query += GetOrderBy("CreatedAt", "asc");
+                case ToDosSortOrder.DateCompleteAsc:
+                    query += GetOrderBy("DateComplete", "asc");
                     break;
-                case ToDosSortOrder.DateDesc:
-                    query += GetOrderBy("CreatedAt", "desc");
+                case ToDosSortOrder.DateCompleteDesc:
+                    query += GetOrderBy("DateComplete", "desc");
                     break;
             }
 
@@ -112,15 +120,20 @@ namespace ToDoList.Repositories
 
         private string GetOrderBy(string columnName, string typeColumnName)
         {
-            string dateTimeIfNull;
-            if (string.Compare(typeColumnName, "desc") == 0)
-                dateTimeIfNull = "1900-01-01 00:00:00";
-            else
-                dateTimeIfNull = "9999-01-01 00:00:00";
-            if (string.Compare(columnName, "Deadline", true) == 0)
-                return $@"order by ToDos.IsDone asc, 
+            if (string.Compare(columnName, "Deadline", true) == 0 || string.Compare(columnName, "DateComplete", true) == 0)
+            {
+                string dateTimeIfNull;
+                if (string.Compare(typeColumnName, "desc") == 0)
+                    dateTimeIfNull = "1753-01-01 00:00:00";
+                else
+                    dateTimeIfNull = "9999-12-31 23:59:59";
+
+                return $@"order by ToDos.IsComplete asc, 
                         CASE WHEN ToDos.{columnName} IS NULL THEN '{dateTimeIfNull}' ELSE ToDos.{columnName} END {typeColumnName}";
-            return $@"order by ToDos.IsDone asc, 
+
+            }
+
+            return $@"order by ToDos.IsComplete asc, 
                     ToDos.{columnName} {typeColumnName}";
         }
     }

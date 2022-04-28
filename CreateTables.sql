@@ -22,9 +22,10 @@ create table [dbo].[Categories]
 create table [dbo].[ToDos]
 (
 	[Id] int identity(1, 1) not null primary key,
+	[IsComplete] tinyint default 0,
 	[Name] nvarchar(255) not null,
 	[Deadline] datetime,
-	[IsDone] tinyint default 0,
+	[DateComplete] datetime,
 	[CreatedAt] datetime not null,
 	[UpdatedAt] datetime not null,
 	[CategoryId] int foreign key ([CategoryId]) references Categories(Id) on delete set null,

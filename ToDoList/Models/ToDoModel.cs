@@ -1,25 +1,36 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using ToDoList.ViewModels.ToDos;
 
 namespace ToDoList.Models
 {
     public class ToDoModel : BaseModel
     {
-        [Required(ErrorMessage = "Name is required")]
-        public string Name { get; set; }
-
-        [Display(Name = "Is done")]
-        public bool IsDone { get; set; }
-
-        public DateTime? Deadline { get; set; }
-
-        [Display(Name = "Category")]
-        public int? CategoryId { get; set; }
-
-        public CategoryModel? Category { get; set; }
+        public ToDoModel()
+        {
+        }
         
-        [Display(Name = "User")]
-        public int? UserId { get; set; }
+        public ToDoModel(ToDosCreateViewModel toDosCreateViewModel)
+        {
+            Name = toDosCreateViewModel.Name;
+            Deadline = toDosCreateViewModel.Deadline;
+            CategoryId = toDosCreateViewModel.CategoryId;
+        }
 
+        public ToDoModel(ToDosEditViewModel toDosEditViewModel)
+        {
+            Id = toDosEditViewModel.Id;
+            Name = toDosEditViewModel.Name;
+            IsComplete = toDosEditViewModel.IsComplete;
+            Deadline = toDosEditViewModel.Deadline;
+            CategoryId = toDosEditViewModel.CategoryId;
+        }
+
+        public string Name { get; set; }
+        public bool IsComplete { get; set; }
+        public DateTime? Deadline { get; set; }
+        public DateTime? DateComplete { get; set; }
+        public int? CategoryId { get; set; }
+        public CategoryModel? Category { get; set; }
+        public int? UserId { get; set; }
         public UserModel? User { get; set; }
     }
 }

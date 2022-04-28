@@ -4,8 +4,8 @@
     {
         DeadlineAcs,
         DeadlineDecs,
-        DateAsc,
-        DateDesc,
+        DateCompleteAsc,
+        DateCompleteDesc,
         NameAsc,
         NameDesc,
     }

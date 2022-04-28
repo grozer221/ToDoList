@@ -1,16 +1,18 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ToDoList.Enums;
+using ToDoList.Repositories.Abstraction;
 using ToDoList.Services;
+using ToDoList.ViewModels.Categories;
 
 namespace ToDoList.Controllers
 {
     [Authorize]
     public class CategoriesController : Controller
     {
-        private readonly CategoryRepository _categoryRepository;
+        private readonly ICategoryRepository _categoryRepository;
 
-        public CategoriesController(CategoryRepository categoryRepository)
+        public CategoriesController(ICategoryRepository categoryRepository)
         {
             _categoryRepository = categoryRepository;
         }
@@ -47,16 +49,15 @@ namespace ToDoList.Controllers
 
         // POST: CategoriesController/Create
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name")] CategoryModel category)
+        public async Task<IActionResult> Create(CategoriesCreateViewModel categoriesCreateViewModel)
         {
-            if (ModelState.IsValid)
-            {
-                category.UserId = int.Parse(HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultIdClaimType).Value);
-                await _categoryRepository.CreateAsync(category);
-                return RedirectToAction(nameof(Index));
-            }
-            return View(category);
+            if (!ModelState.IsValid)
+                return View(categoriesCreateViewModel);
+
+            CategoryModel category = new CategoryModel(categoriesCreateViewModel);
+            category.UserId = int.Parse(HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultIdClaimType).Value);
+            await _categoryRepository.CreateAsync(category);
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: CategoriesController/Edit/5
@@ -78,31 +79,30 @@ namespace ToDoList.Controllers
 
         // POST: CategoriesController/Edit/5
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit([Bind("Id,Name")] CategoryModel category)
+        public async Task<IActionResult> Edit(CategoriesEditViewModel categoriesEditViewModel)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
+                return View(categoriesEditViewModel);
+
+            int currentUserId = int.Parse(HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultIdClaimType).Value);
+            CategoryModel checkAccessCategory = await _categoryRepository.GetByIdAsync(categoriesEditViewModel.Id);
+            if (checkAccessCategory.UserId != currentUserId)
             {
-                int currentUserId = int.Parse(HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultIdClaimType).Value);
-                var checkAccessCategory = await _categoryRepository.GetByIdAsync(category.Id);
-                if (checkAccessCategory.UserId != currentUserId)
-                {
-                    ModelState.AddModelError("", "You dont have access to edit it");
-                }
-                else
-                {
-                    try
-                    {
-                        await _categoryRepository.UpdateAsync(category);
-                        return RedirectToAction(nameof(Index));
-                    }
-                    catch (Exception ex)
-                    {
-                        ModelState.AddModelError("", ex.Message);
-                    }
-                }
+                ModelState.AddModelError("", "You dont have access to edit it");
+                return View(categoriesEditViewModel);
             }
-            return View(category);
+
+            try
+            {
+                CategoryModel category = new CategoryModel(categoriesEditViewModel);
+                await _categoryRepository.UpdateAsync(category);
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", ex.Message);
+                return View(categoriesEditViewModel);
+            }
         }
 
         // GET: CategoriesController/Delete/5
@@ -124,7 +124,6 @@ namespace ToDoList.Controllers
 
         // POST: CategoriesController/Delete/5
         [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             CategoryModel category = await _categoryRepository.GetByIdAsync(id);

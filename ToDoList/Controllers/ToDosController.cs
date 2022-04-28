@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ToDoList.Enums;
+using ToDoList.Repositories.Abstraction;
 using ToDoList.Services;
 using ToDoList.ViewModels.ToDos;
 
@@ -9,10 +10,10 @@ namespace ToDoList.Controllers
     [Authorize]
     public class ToDosController : Controller
     {
-        private readonly ToDoRepository _toDoRepository;
-        private readonly CategoryRepository _categoryRepository;
+        private readonly IToDoRepository _toDoRepository;
+        private readonly ICategoryRepository _categoryRepository;
 
-        public ToDosController(ToDoRepository toDoRepository, CategoryRepository categoryRepository)
+        public ToDosController(IToDoRepository toDoRepository, ICategoryRepository categoryRepository)
         {
             _toDoRepository = toDoRepository;
             _categoryRepository = categoryRepository;
@@ -43,21 +44,19 @@ namespace ToDoList.Controllers
 
         // POST: ToDosController/Create
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name,Deadline,CategoryId")] ToDoModel toDo)
+        public async Task<IActionResult> Create(ToDosCreateViewModel toDosCreateViewModel)
         {
             int currentUserId = int.Parse(HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultIdClaimType).Value);
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                toDo.UserId = currentUserId;
-                await _toDoRepository.CreateAsync(toDo);
-                return RedirectToAction(nameof(Index));
+                toDosCreateViewModel.Categories = new List<CategoryModel> { new CategoryModel { Name = "--Select category--" } };
+                toDosCreateViewModel.Categories.AddRange(await _categoryRepository.GetMyAsync(currentUserId, string.Empty, CategoriesSortOrder.DateDesc));
+                return View(toDosCreateViewModel);
             }
-            ToDosCreateViewModel toDosCreateViewModel = new ToDosCreateViewModel();
-            toDosCreateViewModel.Categories = new List<CategoryModel> { new CategoryModel { Name = "--Select category--" } };
-            toDosCreateViewModel.Categories.AddRange(await _categoryRepository.GetMyAsync(currentUserId, string.Empty, CategoriesSortOrder.DateDesc));
-            toDosCreateViewModel.ToDo = toDo;
-            return View(toDosCreateViewModel);
+            ToDoModel toDo = new ToDoModel(toDosCreateViewModel);
+            toDo.UserId = currentUserId;
+            await _toDoRepository.CreateAsync(toDo);
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: ToDosController/Edit/5
@@ -74,45 +73,42 @@ namespace ToDoList.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            ToDosEditViewModel toDosEditViewModel = new ToDosEditViewModel();
+            ToDosEditViewModel toDosEditViewModel = new ToDosEditViewModel(toDo);
             toDosEditViewModel.Categories = new List<CategoryModel> { new CategoryModel { Name = "--Select category--" } };
             toDosEditViewModel.Categories.AddRange(await _categoryRepository.GetMyAsync(currentUserId, string.Empty, CategoriesSortOrder.DateDesc));
-            toDosEditViewModel.ToDo = toDo;
             return View(toDosEditViewModel);
         }
 
         // POST: ToDosController/Edit/5
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit([Bind("Id,Name,IsDone,Deadline,CategoryId")] ToDoModel toDo)
+        public async Task<IActionResult> Edit(ToDosEditViewModel toDosEditViewModel)
         {
             int currentUserId = int.Parse(HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultIdClaimType).Value);
-            ToDosEditViewModel toDosEditViewModel = new ToDosEditViewModel();
             toDosEditViewModel.Categories = new List<CategoryModel> { new CategoryModel { Name = "--Select category--" } };
             toDosEditViewModel.Categories.AddRange(await _categoryRepository.GetMyAsync(currentUserId, string.Empty, CategoriesSortOrder.DateDesc));
-            toDosEditViewModel.ToDo = toDo;
-            if (ModelState.IsValid)
+
+            if (!ModelState.IsValid)
+                return View(toDosEditViewModel);
+
+            ToDoModel checkAccessTodo = await _toDoRepository.GetByIdAsync(toDosEditViewModel.Id);
+            if (checkAccessTodo.UserId != currentUserId)
             {
-                var checkAccessTodo = await _toDoRepository.GetByIdAsync(toDo.Id);
-                if (checkAccessTodo.UserId != currentUserId)
-                {
-                    ModelState.AddModelError("", "You dont have access to edit it");
-                }
-                else
-                {
-                    toDosEditViewModel.ToDo.UserId = currentUserId;
-                    try
-                    {
-                        await _toDoRepository.UpdateAsync(toDo);
-                        return RedirectToAction(nameof(Index));
-                    }
-                    catch (Exception ex)
-                    {
-                        ModelState.AddModelError("", ex.Message);
-                    }
-                }
+                ModelState.AddModelError("", "You dont have access to edit it");
+                return View(toDosEditViewModel);
             }
-            return View(toDosEditViewModel);
+
+            try
+            {
+                ToDoModel toDo = new ToDoModel(toDosEditViewModel);
+                toDo.UserId = currentUserId;
+                await _toDoRepository.UpdateAsync(toDo);
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", ex.Message);
+                return View(toDosEditViewModel);
+            }
         }
 
         // GET: ToDosController/Delete/5
@@ -134,25 +130,26 @@ namespace ToDoList.Controllers
 
         // POST: ToDosController/Delete/5
         [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             ToDoModel toDo = await _toDoRepository.GetByIdAsync(id);
             if (toDo == null)
                 return NotFound();
+
             int currentUserId = int.Parse(HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultIdClaimType).Value);
             if(toDo.UserId != currentUserId)
             {
                 TempData["Error"] = "You dont have access to delete it.";
                 return View(toDo);
             }
+
             await _toDoRepository.RemoveAsync(toDo.Id);
             return RedirectToAction(nameof(Index));
         }
 
         // POST: ToDosController/SwitchIsDone?id=5&isDone=true
         [HttpPost]
-        public async Task<IActionResult> SwitchIsDone(int id, bool isDone)
+        public async Task<IActionResult> SwitchIsComplete(int id, bool isComplete)
         {
             ToDoModel toDo = await _toDoRepository.GetByIdAsync(id);
             if (toDo == null)
@@ -164,9 +161,9 @@ namespace ToDoList.Controllers
                 return Forbid();
             }
 
-            toDo.IsDone = isDone;
+            toDo.IsComplete = isComplete;
             await _toDoRepository.UpdateAsync(toDo);
-            return Ok();
+            return Ok(toDo);
         }
     }
 }
