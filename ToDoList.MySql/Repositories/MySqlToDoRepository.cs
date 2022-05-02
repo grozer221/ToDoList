@@ -1,9 +1,10 @@
 ﻿using Dapper;
 using System.Data;
-using ToDoList.Enums;
-using ToDoList.Repositories.Abstraction;
+using ToDoList.Business.Enums;
+using ToDoList.Business.Models;
+using ToDoList.Business.Repositories;
 
-namespace ToDoList.Repositories.MySql
+namespace ToDoList.MySql.Repositories
 {
     public class MySqlToDoRepository : IToDoRepository
     {

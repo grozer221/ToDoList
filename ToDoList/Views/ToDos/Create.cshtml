@@ -1,4 +1,5 @@
-﻿@using ToDoList.ViewModels.ToDos
+﻿@using ToDoList.Business.Models
+@using ToDoList.ViewModels.ToDos
 @model ToDosCreateViewModel
 
 @{
@@ -12,24 +13,24 @@
         <form asp-action="Create">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <div class="form-group">
-                <label asp-for="Name" class="control-label"></label>
-                <input asp-for="Name" class="form-control" />
-                <span asp-validation-for="Name" class="text-danger"></span>
+                <label asp-for="ToDo.Name" class="control-label"></label>
+                <input asp-for="ToDo.Name" class="form-control" />
+                <span asp-validation-for="ToDo.Name" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="Deadline" class="control-label"></label>
-                <input asp-for="Deadline" class="form-control" />
-                <span asp-validation-for="Deadline" class="text-danger"></span>
+                <label asp-for="ToDo.Deadline" class="control-label"></label>
+                <input asp-for="ToDo.Deadline" class="form-control" />
+                <span asp-validation-for="ToDo.Deadline" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="CategoryId" class="control-label"></label>
+                <label asp-for="ToDo.CategoryId" class="control-label"></label>
                 <select 
-                    asp-for="CategoryId"
+                    asp-for="ToDo.CategoryId"
                     asp-items="@(new SelectList(Model.Categories, nameof(CategoryModel.Id), nameof(CategoryModel.Name)))"
                     class="form-control"
                 >
                     </select>
-                <span asp-validation-for="CategoryId" class="text-danger"></span>
+                <span asp-validation-for="ToDo.CategoryId" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <button type="submit" class="btn btn-primary">Create</button>

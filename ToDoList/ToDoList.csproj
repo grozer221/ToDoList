@@ -7,6 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="11.0.1" />
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="11.0.0" />
     <PackageReference Include="Dapper" Version="2.0.123" />
     <PackageReference Include="MailKit" Version="3.2.0" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="6.0.3" />
@@ -16,6 +18,12 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.3.0" />
     <PackageReference Include="System.Data.SqlClient" Version="4.8.3" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.17.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ToDoList.Business\ToDoList.Business.csproj" />
+    <ProjectReference Include="..\ToDoList.MsSql\ToDoList.MsSql.csproj" />
+    <ProjectReference Include="..\ToDoList.MySql\ToDoList.MySql.csproj" />
   </ItemGroup>
 
 </Project>

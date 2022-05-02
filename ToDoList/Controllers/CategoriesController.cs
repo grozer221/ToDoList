@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ToDoList.Enums;
-using ToDoList.Repositories.Abstraction;
+using ToDoList.Business.Enums;
 using ToDoList.Services;
 using ToDoList.ViewModels.Categories;
 
@@ -11,17 +11,20 @@ namespace ToDoList.Controllers
     public class CategoriesController : Controller
     {
         private readonly ICategoryRepository _categoryRepository;
+        private readonly IMapper _mapper;
 
-        public CategoriesController(ICategoryRepository categoryRepository)
+        public CategoriesController(ICategoryRepository categoryRepository, IMapper mapper)
         {
             _categoryRepository = categoryRepository;
+            _mapper = mapper;
         }
 
         // GET: CategoriesController
         public async Task<IActionResult> Index(string? like, CategoriesSortOrder sortOrder)
         {
             int currentUserId = int.Parse(HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultIdClaimType).Value);
-            return View(await _categoryRepository.GetMyAsync(currentUserId, like, sortOrder));
+            var categories = await _categoryRepository.GetMyAsync(currentUserId, like, sortOrder);
+            return View(_mapper.Map<IEnumerable<CategoriesIndexViewModel>>(categories));
         }
 
         // GET: CategoriesController/Details/5
@@ -38,7 +41,7 @@ namespace ToDoList.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            return View(category);
+            return View(_mapper.Map<CategoriesDetailsViewModel>(category));
         }
 
         // GET: CategoriesController/Create
@@ -54,7 +57,7 @@ namespace ToDoList.Controllers
             if (!ModelState.IsValid)
                 return View(categoriesCreateViewModel);
 
-            CategoryModel category = new CategoryModel(categoriesCreateViewModel);
+            CategoryModel category = _mapper.Map<CategoryModel>(categoriesCreateViewModel);
             category.UserId = int.Parse(HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultIdClaimType).Value);
             await _categoryRepository.CreateAsync(category);
             return RedirectToAction(nameof(Index));
@@ -73,8 +76,7 @@ namespace ToDoList.Controllers
                 TempData["Error"] = "You dont have access to edit it.";
                 return RedirectToAction(nameof(Index));
             }
-
-            return View(category);
+            return View(_mapper.Map<CategoriesEditViewModel>(category));
         }
 
         // POST: CategoriesController/Edit/5
@@ -94,7 +96,7 @@ namespace ToDoList.Controllers
 
             try
             {
-                CategoryModel category = new CategoryModel(categoriesEditViewModel);
+                CategoryModel category = _mapper.Map<CategoryModel>(categoriesEditViewModel);
                 await _categoryRepository.UpdateAsync(category);
                 return RedirectToAction(nameof(Index));
             }
@@ -119,7 +121,7 @@ namespace ToDoList.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            return View(category);
+            return View(_mapper.Map<CategoriesDeleteViewModel>(category));
         }
 
         // POST: CategoriesController/Delete/5

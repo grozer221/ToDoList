@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace ToDoList.Abstraction
+﻿namespace ToDoList.Business.Models
 {
     public abstract class BaseModel
     {

@@ -1,36 +1,23 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
+using static ToDoList.ViewModels.ToDos.ToDosCreateViewModel;
 
 namespace ToDoList.ViewModels.ToDos
 {
     public class ToDosEditViewModel
     {
-        public ToDosEditViewModel()
-        {
-        }
-        
-        public ToDosEditViewModel(ToDoModel toDo)
-        {
-            Id = toDo.Id;
-            Name = toDo.Name;
-            IsComplete = toDo.IsComplete;
-            Deadline = toDo.Deadline;
-            CategoryId = toDo.CategoryId;
-        }
+        public ToDoEditViewModel ToDo { get; set; }
+        public List<CategoryModel> Categories { get; set; }
+    }
 
+    public class ToDoEditViewModel : ToDoCreateViewModel
+    {
+        [BindProperty(Name = "ToDo.Id")]
         [Required(ErrorMessage = "Id is required")]
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "Name is required")]
-        public string Name { get; set; }
-
+        [BindProperty(Name = "ToDo.IsComplete")]
         [Display(Name = "Is done")]
         public bool IsComplete { get; set; }
-
-        public DateTime? Deadline { get; set; }
-
-        [Display(Name = "Category")]
-        public int? CategoryId { get; set; }
-
-        public List<CategoryModel>? Categories { get; set; }
     }
 }

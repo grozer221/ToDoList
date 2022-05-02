@@ -1,8 +1,9 @@
 ﻿using Dapper;
 using System.Data;
-using ToDoList.Repositories.Abstraction;
+using ToDoList.Business.Models;
+using ToDoList.Business.Repositories;
 
-namespace ToDoList.Repositories.MySql
+namespace ToDoList.MySql.Repositories
 {
     public class MySqlUserRepository : IUserRepository
     {

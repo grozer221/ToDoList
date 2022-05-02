@@ -1,14 +1,15 @@
 ﻿using Dapper;
 using System.Data;
-using ToDoList.Enums;
-using ToDoList.Repositories.Abstraction;
+using ToDoList.Business.Enums;
+using ToDoList.Business.Models;
+using ToDoList.Business.Repositories;
 
-namespace ToDoList.Repositories.MSSql
+namespace ToDoList.MySql.Repositories
 {
-    public class MSSqlCategoryRepository : ICategoryRepository
+    public class MySqlCategoryRepository : ICategoryRepository
     {
         private readonly IDbConnection _dbConnection;
-        public MSSqlCategoryRepository(IDbConnection dbConnection)
+        public MySqlCategoryRepository(IDbConnection dbConnection)
         {
             _dbConnection = dbConnection;
         }
@@ -82,7 +83,7 @@ namespace ToDoList.Repositories.MSSql
             string query = $@"insert into Categories 
                             (Name, UserId, CreatedAt, UpdatedAt) 
                             values (@Name, @UserId, @CreatedAt, @UpdatedAt);
-                            SELECT CAST(SCOPE_IDENTITY() as int);";
+                            SELECT LAST_INSERT_ID();";
             category.Id = await _dbConnection.QuerySingleAsync<int>(query, category);
             return category;
         }

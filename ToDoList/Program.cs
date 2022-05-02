@@ -4,9 +4,8 @@ using System.Data;
 using System.Data.SqlClient;
 using ToDoList;
 using ToDoList.Controllers;
-using ToDoList.Repositories.Abstraction;
-using ToDoList.Repositories.MSSql;
-using ToDoList.Repositories.MySql;
+using ToDoList.MsSql.Repositories;
+using ToDoList.MySql.Repositories;
 using ToDoList.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +17,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.AccessDeniedPath = new PathString("/Account/AccessDenied");
     });
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddAutoMapper(typeof(AppMappingProfile));
 
 if (builder.Environment.IsDevelopment())
 {
