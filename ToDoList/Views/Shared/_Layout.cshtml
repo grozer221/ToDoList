@@ -1,4 +1,9 @@
-﻿@using ToDoList.Services
+﻿@using ToDoList.Enums
+
+@{
+    string currentDataProvider = ViewContext.HttpContext.Request.Cookies["DataProvider"];
+}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -29,26 +34,14 @@
                         </li>
                     </ul>
                     <ul class="navbar-nav">
-                        @{
-                            if (ViewContext.HttpContext.User.Identity.IsAuthenticated)
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Logout">
-                                        Logout(@ViewContext.HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultEmailClaimType).Value)
-                                    </a>
-                                </li>
-                            }
-                            else
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Login">Login</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Register">Register</a>
-                                </li>
-                            }
-                        }
-
+                        <form asp-controller="Settings" asp-action="ChangeDataProvider" onchange="this.submit()">
+                            <select name="dataProvider" id="dataProvider" class="form-control">
+                                @foreach (var dataProvider in Enum.GetNames(typeof(DataProvider)))
+                                {
+                                    <option selected=@((bool)(currentDataProvider == dataProvider)) value="@dataProvider">@dataProvider.SplitCamelCase()</option>
+                                }
+                            </select>
+                        </form>
                     </ul>
                 </div>
             </div>

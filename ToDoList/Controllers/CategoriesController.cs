@@ -1,47 +1,39 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ToDoList.Business.Enums;
-using ToDoList.Services;
+using ToDoList.Enums;
 using ToDoList.ViewModels.Categories;
 
 namespace ToDoList.Controllers
 {
-    [Authorize]
     public class CategoriesController : Controller
     {
-        private readonly ICategoryRepository _categoryRepository;
-        private readonly IMapper _mapper;
+        private readonly ICategoryRepository CategoryRepository;
+        private readonly IMapper Mapper;
 
-        public CategoriesController(ICategoryRepository categoryRepository, IMapper mapper)
+        public CategoriesController(IEnumerable<ICategoryRepository> categoryRepositories, IMapper mapper, IHttpContextAccessor httpContextAccessor)
         {
-            _categoryRepository = categoryRepository;
-            _mapper = mapper;
+            DataProvider dataProvider;
+            Enum.TryParse(httpContextAccessor.HttpContext.Request.Cookies["DataProvider"], out dataProvider);
+            CategoryRepository = categoryRepositories.GetPropered(dataProvider);
+            Mapper = mapper;
         }
 
         // GET: CategoriesController
         public async Task<IActionResult> Index(string? like, CategoriesSortOrder sortOrder)
         {
-            int currentUserId = int.Parse(HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultIdClaimType).Value);
-            var categories = await _categoryRepository.GetMyAsync(currentUserId, like, sortOrder);
-            return View(_mapper.Map<IEnumerable<CategoriesIndexViewModel>>(categories));
+            var categories = await CategoryRepository.GetAsync(like, sortOrder);
+            return View(Mapper.Map<IEnumerable<CategoriesIndexViewModel>>(categories));
         }
 
         // GET: CategoriesController/Details/5
         public async Task<IActionResult> Details(int id)
         {
-            CategoryModel category = await _categoryRepository.GetByIdWithTodosAsync(id);
+            CategoryModel category = await CategoryRepository.GetByIdWithTodosAsync(id);
             if(category == null)
-                return NotFound();
+                return View(nameof(NotFound));
 
-            int currentUserId = int.Parse(HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultIdClaimType).Value);
-            if (category.UserId != currentUserId)
-            {
-                TempData["Error"] = "You dont have access to details it.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            return View(_mapper.Map<CategoriesDetailsViewModel>(category));
+            return View(Mapper.Map<CategoriesDetailsViewModel>(category));
         }
 
         // GET: CategoriesController/Create
@@ -57,26 +49,19 @@ namespace ToDoList.Controllers
             if (!ModelState.IsValid)
                 return View(categoriesCreateViewModel);
 
-            CategoryModel category = _mapper.Map<CategoryModel>(categoriesCreateViewModel);
-            category.UserId = int.Parse(HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultIdClaimType).Value);
-            await _categoryRepository.CreateAsync(category);
+            CategoryModel category = Mapper.Map<CategoryModel>(categoriesCreateViewModel);
+            await CategoryRepository.CreateAsync(category);
             return RedirectToAction(nameof(Index));
         }
 
         // GET: CategoriesController/Edit/5
         public async Task<IActionResult> Edit(int id)
         {
-            CategoryModel category = await _categoryRepository.GetByIdAsync(id);
+            CategoryModel category = await CategoryRepository.GetByIdAsync(id);
             if (category == null)
-                return NotFound();
+                return View(nameof(NotFound));
 
-            int currentUserId = int.Parse(HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultIdClaimType).Value);
-            if (category.UserId != currentUserId)
-            {
-                TempData["Error"] = "You dont have access to edit it.";
-                return RedirectToAction(nameof(Index));
-            }
-            return View(_mapper.Map<CategoriesEditViewModel>(category));
+            return View(Mapper.Map<CategoriesEditViewModel>(category));
         }
 
         // POST: CategoriesController/Edit/5
@@ -86,18 +71,10 @@ namespace ToDoList.Controllers
             if (!ModelState.IsValid)
                 return View(categoriesEditViewModel);
 
-            int currentUserId = int.Parse(HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultIdClaimType).Value);
-            CategoryModel checkAccessCategory = await _categoryRepository.GetByIdAsync(categoriesEditViewModel.Id);
-            if (checkAccessCategory.UserId != currentUserId)
-            {
-                ModelState.AddModelError("", "You dont have access to edit it");
-                return View(categoriesEditViewModel);
-            }
-
             try
             {
-                CategoryModel category = _mapper.Map<CategoryModel>(categoriesEditViewModel);
-                await _categoryRepository.UpdateAsync(category);
+                CategoryModel category = Mapper.Map<CategoryModel>(categoriesEditViewModel);
+                await CategoryRepository.UpdateAsync(category);
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
@@ -110,37 +87,29 @@ namespace ToDoList.Controllers
         // GET: CategoriesController/Delete/5
         public async Task<IActionResult> Delete(int id)
         {
-            CategoryModel category = await _categoryRepository.GetByIdAsync(id);
+            CategoryModel category = await CategoryRepository.GetByIdAsync(id);
             if (category == null)
-                return NotFound();
+                return View(nameof(NotFound));
 
-            int currentUserId = int.Parse(HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultIdClaimType).Value);
-            if (category.UserId != currentUserId)
-            {
-                TempData["Error"] = "You dont have access to delete it.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            return View(_mapper.Map<CategoriesDeleteViewModel>(category));
+            return View(Mapper.Map<CategoriesDeleteViewModel>(category));
         }
 
         // POST: CategoriesController/Delete/5
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            CategoryModel category = await _categoryRepository.GetByIdAsync(id);
+            CategoryModel category = await CategoryRepository.GetByIdAsync(id);
             if (category == null)
-                return NotFound();
+                return View(nameof(NotFound));
 
-            int currentUserId = int.Parse(HttpContext.User.Claims.First(c => c.Type == AccountService.DefaultIdClaimType).Value);
-            if (category.UserId != currentUserId)
-            {
-                TempData["Error"] = "You dont have access to delete it.";
-                return View(category);
-            }
-
-            await _categoryRepository.RemoveAsync(category.Id);
+            await CategoryRepository.RemoveAsync(category.Id);
             return RedirectToAction(nameof(Index));
+        }
+
+        // GET: CategoriesController/NotFound
+        public IActionResult NotFound()
+        {
+            return View();
         }
     }
 }

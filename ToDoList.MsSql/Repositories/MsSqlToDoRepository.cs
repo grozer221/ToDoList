@@ -8,83 +8,26 @@ namespace ToDoList.MsSql.Repositories
 {
     public class MSSqlToDoRepository : IToDoRepository
     {
-        private readonly IDbConnection _dbConnection;
+        private readonly IDbConnection DbConnection;
 
         public MSSqlToDoRepository(IDbConnection dbConnection)
         {
-            _dbConnection = dbConnection;
+            DbConnection = dbConnection;
         }
 
         public async Task<ToDoModel> GetByIdAsync(int id)
         {
             string query = $"select * from ToDos where id = @id";
-            return await _dbConnection.QueryFirstOrDefaultAsync<ToDoModel>(query, new { id });
+            return await DbConnection.QueryFirstOrDefaultAsync<ToDoModel>(query, new { id });
         }
 
-        public async Task<List<ToDoModel>> GetAsync()
-        {
-            string query = $"select * from ToDos";
-            return (await _dbConnection.QueryAsync<ToDoModel>(query)).ToList();
-        }
-
-        public async Task<ToDoModel> CreateAsync(ToDoModel toDo)
-        {
-            if (toDo.CategoryId == 0)
-                toDo.CategoryId = null;
-            DateTime dateTimeNow = DateTime.Now;
-            toDo.CreatedAt = dateTimeNow;
-            toDo.UpdatedAt = dateTimeNow;
-            string query = $@"insert into Todos 
-                        (Name, IsComplete, Deadline, CategoryId, UserId, CreatedAt, UpdatedAt) 
-                        values (@Name, @IsComplete, @Deadline, @CategoryId, @UserId, @CreatedAt, @UpdatedAt);
-                        SELECT CAST(SCOPE_IDENTITY() as int);";
-            toDo.Id = await _dbConnection.QuerySingleAsync<int>(query, toDo);
-            return toDo;
-        }
-
-        public async Task<ToDoModel> UpdateAsync(ToDoModel toDo)
-        {
-            ToDoModel toDoIsExists = await GetByIdAsync(toDo.Id);
-            if (toDoIsExists == null)
-                throw new Exception($"ToDo with id {toDo.Id} does not exists");
-
-            string query = @"update ToDos 
-                            set Name = @Name, IsComplete = @IsComplete, DateComplete = @DateComplete, Deadline = @Deadline, CategoryId = @CategoryId, UpdatedAt = @UpdatedAt 
-                            where id = @id";
-
-            if (toDo.CategoryId == 0)
-                toDo.CategoryId = null;
-
-            DateTime dateTimeNow = DateTime.Now;
-            if (!toDoIsExists.IsComplete && toDo.IsComplete)
-                toDo.DateComplete = dateTimeNow;
-            else if (toDoIsExists.IsComplete && !toDo.IsComplete)
-                toDo.DateComplete = null;
-            else
-                toDo.DateComplete = toDoIsExists.DateComplete;
-
-            toDo.UpdatedAt = dateTimeNow;
-            await _dbConnection.ExecuteAsync(query, toDo);
-            return toDo;
-        }
-
-        public async Task RemoveAsync(int id)
-        {
-            ToDoModel toDoIsExists = await GetByIdAsync(id);
-            if (toDoIsExists == null)
-                throw new Exception($"ToDo with id {id} does not exists");
-
-            string query = $"delete from ToDos where id = @id";
-            await _dbConnection.ExecuteAsync(query, new { id });
-        }
-
-        public async Task<List<ToDoModel>> GetMyWithCategory(int userId, string? like = null, ToDosSortOrder sortOrder = ToDosSortOrder.DeadlineAcs, int? categoryId = null)
+        public async Task<List<ToDoModel>> GetWithCategoryAsync(string? like = null, ToDosSortOrder sortOrder = ToDosSortOrder.DeadlineAcs, int? categoryId = null)
         {
             like = like ?? "";
             like = $"%{like}%";
             string query = @"select * from Todos 
                             left join Categories on ToDos.categoryId = Categories.Id 
-                            where ToDos.Name like @like and ToDos.UserId = @userId ";
+                            where ToDos.Name like @like ";
 
             if (categoryId != null && categoryId != 0)
                 query += @"and ToDos.CategoryId = @categoryId ";
@@ -110,13 +53,13 @@ namespace ToDoList.MsSql.Repositories
                     query += GetOrderBy("DateComplete", "desc");
                     break;
             }
-
-            return (await _dbConnection.QueryAsync<ToDoModel, CategoryModel, ToDoModel>(query, (toDo, category) =>
+            var toDos = await DbConnection.QueryAsync<ToDoModel, CategoryModel, ToDoModel>(query, (toDo, category) =>
             {
                 toDo.CategoryId = category?.Id;
                 toDo.Category = category;
                 return toDo;
-            }, new { like, userId, categoryId })).ToList(); ;
+            }, new { like, categoryId });
+            return toDos.ToList();
         }
 
         private string GetOrderBy(string columnName, string typeColumnName)
@@ -136,6 +79,57 @@ namespace ToDoList.MsSql.Repositories
 
             return $@"order by ToDos.IsComplete asc, 
                     ToDos.{columnName} {typeColumnName}";
+        }
+
+        public async Task<ToDoModel> CreateAsync(ToDoModel toDo)
+        {
+            if (toDo.CategoryId == 0)
+                toDo.CategoryId = null;
+            DateTime dateTimeNow = DateTime.Now;
+            toDo.CreatedAt = dateTimeNow;
+            toDo.UpdatedAt = dateTimeNow;
+            string query = $@"insert into Todos 
+                        (Name, IsComplete, Deadline, CategoryId, CreatedAt, UpdatedAt) 
+                        values (@Name, @IsComplete, @Deadline, @CategoryId, @CreatedAt, @UpdatedAt);
+                        SELECT CAST(SCOPE_IDENTITY() as int);";
+            toDo.Id = await DbConnection.QuerySingleAsync<int>(query, toDo);
+            return toDo;
+        }
+
+        public async Task<ToDoModel> UpdateAsync(ToDoModel toDo)
+        {
+            ToDoModel toDoIsExists = await GetByIdAsync(toDo.Id);
+            if (toDoIsExists == null)
+                throw new Exception($"ToDo with id {toDo.Id} does not exists");
+
+            string query = @"update ToDos 
+                            set Name = @Name, IsComplete = @IsComplete, DateComplete = @DateComplete, Deadline = @Deadline, CategoryId = @CategoryId, UpdatedAt = @UpdatedAt 
+                            where id = @id";
+
+            if (toDo.CategoryId == 0)
+                toDo.CategoryId = null;
+
+            DateTime dateTimeNow = DateTime.Now;
+            if (!toDoIsExists.IsComplete && toDo.IsComplete)
+                toDo.DateComplete = dateTimeNow;
+            else if (toDoIsExists.IsComplete && !toDo.IsComplete)
+                toDo.DateComplete = null;
+            else
+                toDo.DateComplete = toDoIsExists.DateComplete;
+
+            toDo.UpdatedAt = dateTimeNow;
+            await DbConnection.ExecuteAsync(query, toDo);
+            return toDo;
+        }
+
+        public async Task RemoveAsync(int id)
+        {
+            ToDoModel toDoIsExists = await GetByIdAsync(id);
+            if (toDoIsExists == null)
+                throw new Exception($"ToDo with id {id} does not exists");
+
+            string query = $"delete from ToDos where id = @id";
+            await DbConnection.ExecuteAsync(query, new { id });
         }
     }
 }

@@ -8,30 +8,24 @@ namespace ToDoList.MsSql.Repositories
 {
     public class MSSqlCategoryRepository : ICategoryRepository
     {
-        private readonly IDbConnection _dbConnection;
+        private readonly IDbConnection DbConnection;
         public MSSqlCategoryRepository(IDbConnection dbConnection)
         {
-            _dbConnection = dbConnection;
+            DbConnection = dbConnection;
         }
 
         public async Task<CategoryModel> GetByIdAsync(int id)
         {
             string query = $"select * from Categories where id = @id";
-            return await _dbConnection.QueryFirstOrDefaultAsync<CategoryModel>(query, new { id });
+            return await DbConnection.QueryFirstOrDefaultAsync<CategoryModel>(query, new { id });
         }
 
-        public async Task<List<CategoryModel>> GetAsync()
-        {
-            string query = $"select * from Categories";
-            return (await _dbConnection.QueryAsync<CategoryModel>(query)).ToList();
-        }
-
-        public async Task<List<CategoryModel>> GetMyAsync(int userId, string? like, CategoriesSortOrder sortOrder)
+        public async Task<List<CategoryModel>> GetAsync(string? like, CategoriesSortOrder sortOrder)
         {
             like = like ?? "";
             like = $"%{like}%";
             string query = @"select * from Categories
-                            where Categories.Name like @like and Categories.UserId = @userId ";
+                            where Categories.Name like @like ";
 
             switch (sortOrder)
             {
@@ -48,13 +42,14 @@ namespace ToDoList.MsSql.Repositories
                     query += $"order by Categories.CreatedAt desc";
                     break;
             }
-
-            return (await _dbConnection.QueryAsync<CategoryModel>(query, new { like, userId })).ToList();
+            var categories = await DbConnection.QueryAsync<CategoryModel>(query, new { like });
+            return categories.ToList();
         }
 
         public async Task<CategoryModel> GetByIdWithTodosAsync(int id)
         {
-            return (await GetWithTodosAsync()).FirstOrDefault(c => c.Id == id);
+            var categories = await GetWithTodosAsync();
+            return categories.FirstOrDefault(c => c.Id == id);
         }
 
         public async Task<List<CategoryModel>> GetWithTodosAsync()
@@ -62,7 +57,7 @@ namespace ToDoList.MsSql.Repositories
             string query = @"select * from Categories 
                             left join ToDos on Categories.Id = ToDos.CategoryId";
             var lookup = new Dictionary<int, CategoryModel>();
-            return (await _dbConnection.QueryAsync<CategoryModel, ToDoModel, CategoryModel>(query, (c, toDo) =>
+            var categories = await DbConnection.QueryAsync<CategoryModel, ToDoModel, CategoryModel>(query, (c, toDo) =>
             {
                 CategoryModel category;
                 if (!lookup.TryGetValue(c.Id, out category))
@@ -72,7 +67,8 @@ namespace ToDoList.MsSql.Repositories
                 if (toDo != null)
                     category.ToDos.Add(toDo);
                 return category;
-            })).ToList();
+            });
+            return categories.ToList();
         }
 
         public async Task<CategoryModel> CreateAsync(CategoryModel category)
@@ -81,10 +77,10 @@ namespace ToDoList.MsSql.Repositories
             category.CreatedAt = dateTimeNow;
             category.UpdatedAt = dateTimeNow;
             string query = $@"insert into Categories 
-                            (Name, UserId, CreatedAt, UpdatedAt) 
-                            values (@Name, @UserId, @CreatedAt, @UpdatedAt);
-                            SELECT CAST(SCOPE_IDENTITY() as int);";
-            category.Id = await _dbConnection.QuerySingleAsync<int>(query, category);
+                            (Name, CreatedAt, UpdatedAt) 
+                            values (@Name, @CreatedAt, @UpdatedAt);
+                             SELECT CAST(SCOPE_IDENTITY() as int);";
+            category.Id = await DbConnection.QuerySingleAsync<int>(query, category);
             return category;
         }
 
@@ -98,7 +94,7 @@ namespace ToDoList.MsSql.Repositories
                             set Name = @Name, UpdatedAt = @UpdatedAt
                             where id = @id";
             category.UpdatedAt = DateTime.Now;
-            await _dbConnection.ExecuteAsync(query, category);
+            await DbConnection.ExecuteAsync(query, category);
             return category;
         }
 
@@ -110,7 +106,7 @@ namespace ToDoList.MsSql.Repositories
 
             string query = @"delete from Categories 
                             where id = @id";
-            await _dbConnection.ExecuteAsync(query, new { id });
+            await DbConnection.ExecuteAsync(query, new { id });
         }
     }
 }

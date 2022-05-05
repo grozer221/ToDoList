@@ -18,5 +18,13 @@ namespace ToDoList.Extensions
         {
             return Regex.Replace(str, "(\\B[A-Z])", " $1");
         }
+
+        public static int? ToNullableInt(this string str)
+        {
+            int number;
+            if (int.TryParse(str, out number)) 
+                return number;
+            return null;
+        }
     }
 }

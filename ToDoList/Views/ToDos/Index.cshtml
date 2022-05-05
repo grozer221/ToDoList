@@ -13,42 +13,68 @@
     int categoryId;
     if (!int.TryParse(categoryIdString, out categoryId))
         categoryId = 0;
+
+    var categories = new List<CategoryModel> { new CategoryModel { Name = "-- Select category --" } };
+    categories.AddRange(Model.Categories);
 }
 
 <h1>ToDos</h1>
 
-<div class="row mb-2">
-    <div class="col-2">
-        <a asp-action="Create" class="btn btn-info">Create</a>
+<form asp-action="Create" class="mb-3 mt-2">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="row">
+        <div class="form-group col-5">
+            <label asp-for="CreateToDo.Name" class="control-label"></label>
+            <input asp-for="CreateToDo.Name" class="form-control" />
+            <span asp-validation-for="CreateToDo.Name" class="text-danger"></span>
+        </div>
+        <div class="form-group col-3">
+            <label asp-for="CreateToDo.Deadline" class="control-label"></label>
+            <input asp-for="CreateToDo.Deadline" class="form-control" />
+            <span asp-validation-for="CreateToDo.Deadline" class="text-danger"></span>
+        </div>
+        <div class="form-group col-3">
+            <label asp-for="CreateToDo.CategoryId" class="control-label"></label>
+            <select asp-for="CreateToDo.CategoryId"
+                    asp-items="@(new SelectList(categories, nameof(CategoryModel.Id), nameof(CategoryModel.Name)))"
+                    class="form-control">
+            </select>
+            <span asp-validation-for="CreateToDo.CategoryId" class="text-danger"></span>
+        </div>
+        <div class="form-group col-1">
+            <button type="submit" class="btn btn-primary">Create</button>
+        </div>
     </div>
-    <div class="col-10">
-        <form method="get">
-            <div class="row">
-                <div class="col-3">
-                    <select name="categoryId" id="categoryId" class="form-control" >
-                        @foreach (var category in Model.Categories)
-                        {
-                            <option selected=@((bool)(categoryId == category.Id)) value="@category.Id">@category.Name</option>
-                        }
-                    </select>
-                </div>
-                <div class="col-3">
-                    <select name="sortOrder" id="sortOrder" class="form-control">
-                        @foreach (var sortOrderName in Enum.GetNames(typeof(ToDosSortOrder)))
-                        {
-                            <option selected=@((bool)(sortOrder == sortOrderName)) value="@sortOrderName">@sortOrderName.SplitCamelCase()</option>
-                        }
-                    </select>
-                </div>
-                <div class="col-5">
-                    <input id="like" name="like" class="form-control" placeholder="Search" value=@like>
-                </div>
-                <div class="col-1">
-                    <button type="submit" class="btn btn-primary">Search</button>
-                </div>
+</form>
+
+<div class="row mb-2 mt-2">
+    <form method="get">
+        <div class="row">
+            <div class="col-3">
+                <select name="categoryId" id="categoryId" class="form-control">
+                    <option value=0>-- Select category --</option>
+                    @foreach (var category in Model.Categories)
+                    {
+                        <option selected=@((bool)(categoryId == category.Id)) value="@category.Id">@category.Name</option>
+                    }
+                </select>
             </div>
-        </form>
-    </div>
+            <div class="col-3">
+                <select name="sortOrder" id="sortOrder" class="form-control">
+                    @foreach (var sortOrderName in Enum.GetNames(typeof(ToDosSortOrder)))
+                    {
+                        <option selected=@((bool)(sortOrder == sortOrderName)) value="@sortOrderName">@sortOrderName.SplitCamelCase()</option>
+                    }
+                </select>
+            </div>
+            <div class="col-5">
+                <input id="like" name="like" class="form-control" placeholder="Search" value=@like>
+            </div>
+            <div class="col-1">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </div>
+    </form>
 </div>
 
 <table class="table">

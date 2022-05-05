@@ -1,0 +1,11 @@
+﻿@using ToDoList.ViewModels.Error
+@model ErrorIndexViewModel
+
+@{
+    ViewData["Title"] = Model.Message;
+}
+
+
+<div class="alert alert-danger">
+    @Model.Message
+</div>

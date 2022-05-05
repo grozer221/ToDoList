@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using ToDoList.ViewModels.Categories;
 using ToDoList.ViewModels.ToDos;
-using static ToDoList.ViewModels.ToDos.ToDosCreateViewModel;
 using static ToDoList.ViewModels.ToDos.ToDosIndexViewModel;
 
 namespace ToDoList
@@ -10,33 +9,16 @@ namespace ToDoList
     {
         public AppMappingProfile()
         {
-            CreateMap<ToDoModel, ToDoIndexViewModel>();
-            CreateMap<ToDoIndexViewModel, ToDoModel>();
-            
-            CreateMap<ToDoModel, ToDoCreateViewModel>();
-            CreateMap<ToDoCreateViewModel, ToDoModel>();
-            
-            CreateMap<ToDoModel, ToDoEditViewModel>();
-            CreateMap<ToDoEditViewModel, ToDoModel>();
-            
-            CreateMap<ToDoModel, ToDosDeleteViewModel>();
-            CreateMap<ToDosDeleteViewModel, ToDoModel>();
+            CreateMap<ToDoModel, ToDoIndexViewModel>().ReverseMap();
+            CreateMap<ToDoModel, ToDosCreateViewModel>().ReverseMap();
+            CreateMap<ToDoModel, ToDoEditViewModel>().ReverseMap();
+            CreateMap<ToDoModel, ToDosDeleteViewModel>().ReverseMap();
 
-
-            CreateMap<CategoryModel, CategoriesIndexViewModel>();
-            CreateMap<CategoriesIndexViewModel, CategoryModel>();
-
-            CreateMap<CategoryModel, CategoriesDetailsViewModel>();
-            CreateMap<CategoriesDetailsViewModel, CategoryModel>();
-
-            CreateMap<CategoryModel, CategoriesCreateViewModel>();
-            CreateMap<CategoriesCreateViewModel, CategoryModel>();
-
-            CreateMap<CategoryModel, CategoriesEditViewModel>();
-            CreateMap<CategoriesEditViewModel, CategoryModel>();
-            
-            CreateMap<CategoryModel, CategoriesDeleteViewModel>();
-            CreateMap<CategoriesDeleteViewModel, CategoryModel>();
+            CreateMap<CategoryModel, CategoriesIndexViewModel>().ReverseMap();
+            CreateMap<CategoryModel, CategoriesDetailsViewModel>().ReverseMap();
+            CreateMap<CategoryModel, CategoriesCreateViewModel>().ReverseMap();
+            CreateMap<CategoryModel, CategoriesEditViewModel>().ReverseMap();
+            CreateMap<CategoryModel, CategoriesDeleteViewModel>().ReverseMap();
         }
     }
 }

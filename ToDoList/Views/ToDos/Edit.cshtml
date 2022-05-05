@@ -4,6 +4,8 @@
 
 @{
     ViewData["Title"] = "Edit ToDo";
+    var categories = new List<CategoryModel> { new CategoryModel { Name = "-- Select category --" } };
+    categories.AddRange(Model.Categories);
 }
 
 <h1>Edit @Model.ToDo.Name</h1>
@@ -31,7 +33,7 @@
             <div class="form-group">
                 <label asp-for="ToDo.CategoryId" class="control-label"></label>
                 <select asp-for="ToDo.CategoryId"
-                        asp-items="@(new SelectList(Model.Categories, nameof(CategoryModel.Id), nameof(CategoryModel.Name)))"
+                        asp-items="@(new SelectList(categories, nameof(CategoryModel.Id), nameof(CategoryModel.Name)))"
                         class="form-control">
                 </select>
                 <span asp-validation-for="ToDo.CategoryId" class="text-danger"></span>
