@@ -34,7 +34,17 @@ namespace ToDoList.Controllers
             };
             return View(toDosIndexViewModel);
         }
-        
+
+        // GET: ToDosController/Details/5
+        public async Task<IActionResult> Details(int id)
+        {
+            ToDoModel toDo = await ToDoRepository.GetByIdAsync(id);
+            if (toDo == null)
+                return View(nameof(NotFound));
+
+            return View(Mapper.Map<ToDosDetailsViewModel>(toDo));
+        }
+
         // POST: ToDosController/Create
         [HttpPost]
         public async Task<IActionResult> Create(ToDosCreateViewModel toDosCreateViewModel)

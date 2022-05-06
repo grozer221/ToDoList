@@ -3,6 +3,7 @@ using System.Xml.Serialization;
 using ToDoList.Business.Enums;
 using ToDoList.Business.Models;
 using ToDoList.Business.Repositories;
+using ToDoList.XML.Enums;
 
 namespace ToDoList.XML.Repositories
 {
@@ -25,27 +26,19 @@ namespace ToDoList.XML.Repositories
 
         public Task<ToDoModel> GetByIdAsync(int id)
         {
-            return Task.FromResult(GetById(id));
-        }
-
-        public ToDoModel? GetById(int id)
-        {
             using (FileStream fs = new FileStream(XmlFileName, FileMode.OpenOrCreate))
             {
                 DataWrapper? data = (DataWrapper?)XmlSerializer.Deserialize(fs);
                 if (data == null || data.ToDos == null)
                     return null;
-                return data.ToDos.SingleOrDefault(t => t.Id == id);
+                ToDoModel toDo = data.ToDos.SingleOrDefault(t => t.Id == id);
+                return Task.FromResult(toDo);
             }
         }
 
-        public Task<List<ToDoModel>> GetWithCategoryAsync(string? like, ToDosSortOrder sortOrder, int? categoryId)
+        public Task<List<ToDoModel>> GetWithCategoryAsync(string? like = null, ToDosSortOrder sortOrder = ToDosSortOrder.DeadlineAcs, int? categoryId = null)
         {
-            return Task.FromResult(Get(like, sortOrder, categoryId));
-        }
-
-        public List<ToDoModel> Get(string? like, ToDosSortOrder sortOrder, int? categoryId)
-        {
+            like ??= string.Empty;
             using (FileStream fs = new FileStream(XmlFileName, FileMode.OpenOrCreate))
             {
                 DataWrapper? data = (DataWrapper?)XmlSerializer.Deserialize(fs);
@@ -53,16 +46,63 @@ namespace ToDoList.XML.Repositories
                     data = new DataWrapper();
                 if (data.ToDos == null)
                     data.ToDos = new List<ToDoModel>();
-                return data.ToDos;
+
+                var toDos = data.ToDos
+                    .Where(t => t.Name.Contains(like, StringComparison.OrdinalIgnoreCase));
+
+                if (categoryId != null && categoryId != 0)
+                    toDos = data.ToDos
+                        .Where(t => t.CategoryId == categoryId);
+
+                switch (sortOrder)
+                {
+                    case ToDosSortOrder.DeadlineAcs:
+                        toDos = GetOrderedBy(toDos, t => t.Deadline.HasValue, t => t.Deadline, OrderBy.Asc);
+                        break;
+                    case ToDosSortOrder.DeadlineDecs:
+                        toDos = GetOrderedBy(toDos, t => t.Deadline.HasValue, t => t.Deadline, OrderBy.Desc);
+                        break;
+                    case ToDosSortOrder.NameAsc:
+                        toDos = GetOrderedBy(toDos, t => t.Name, t => t.Name, OrderBy.Asc);
+                        break;
+                    case ToDosSortOrder.NameDesc:
+                        toDos = GetOrderedBy(toDos, t => t.Name, t => t.Name, OrderBy.Desc);
+                        break;
+                    case ToDosSortOrder.DateCompleteAsc:
+                        toDos = GetOrderedBy(toDos, t => t.DateComplete.HasValue, t => t.DateComplete, OrderBy.Asc);
+                        break;
+                    case ToDosSortOrder.DateCompleteDesc:
+                        toDos = GetOrderedBy(toDos, t => t.DateComplete.HasValue, t => t.DateComplete, OrderBy.Desc);
+                        break;
+                }
+
+                foreach (var toDo in toDos)
+                {
+                    toDo.Category = data.Categories.SingleOrDefault(c => c.Id == toDo.CategoryId);
+                }
+                return Task.FromResult(toDos.ToList());
+            }
+        }
+
+        private IEnumerable<ToDoModel> GetOrderedBy(IEnumerable<ToDoModel> toDos, Func<ToDoModel, object> keySelector1, Func<ToDoModel, object> keySelector2, OrderBy orderBy)
+        {
+            switch (orderBy)
+            {
+                case OrderBy.Desc:
+                    return toDos
+                        .OrderBy(t => t.IsComplete)
+                        .ThenByDescending(keySelector1)
+                        .ThenByDescending(keySelector2);
+                case OrderBy.Asc:
+                default:
+                    return toDos
+                        .OrderBy(t => t.IsComplete)
+                        .ThenByDescending(keySelector1)
+                        .ThenBy(keySelector2);
             }
         }
 
         public Task<ToDoModel> CreateAsync(ToDoModel toDo)
-        {
-            return Task.FromResult(Create(toDo));
-        }
-
-        public ToDoModel Create(ToDoModel toDo)
         {
             DataWrapper? data;
             using (FileStream fs = new FileStream(XmlFileName, FileMode.OpenOrCreate))
@@ -89,7 +129,7 @@ namespace ToDoList.XML.Repositories
                 data.ToDos.Add(toDo);
                 XmlSerializer.Serialize(fs, data);
             }
-            return toDo;
+            return Task.FromResult(toDo);
         }
 
         public async Task<ToDoModel> UpdateAsync(ToDoModel toDo)

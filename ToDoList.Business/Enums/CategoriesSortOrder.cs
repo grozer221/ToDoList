@@ -2,8 +2,8 @@
 
 public enum CategoriesSortOrder
 {
-    DateDesc,
-    DateAsc,
-    NameDesc,
     NameAsc,
+    NameDesc,
+    DateAsc,
+    DateDesc,
 }

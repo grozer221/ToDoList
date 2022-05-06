@@ -10,6 +10,7 @@ namespace ToDoList
         public AppMappingProfile()
         {
             CreateMap<ToDoModel, ToDoIndexViewModel>().ReverseMap();
+            CreateMap<ToDoModel, ToDosDetailsViewModel>().ReverseMap();
             CreateMap<ToDoModel, ToDosCreateViewModel>().ReverseMap();
             CreateMap<ToDoModel, ToDoEditViewModel>().ReverseMap();
             CreateMap<ToDoModel, ToDosDeleteViewModel>().ReverseMap();
