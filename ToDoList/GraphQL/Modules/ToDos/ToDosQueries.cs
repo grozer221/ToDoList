@@ -1,6 +1,7 @@
 ﻿using GraphQL;
 using GraphQL.Types;
 using ToDoList.Business.Enums;
+using ToDoList.GraphQL.EnumTypes;
 
 namespace ToDoList.GraphQL.Modules.ToDos
 {
@@ -15,9 +16,15 @@ namespace ToDoList.GraphQL.Modules.ToDos
 
             Field<NonNullGraphType<ListGraphType<ToDoType>>, IEnumerable<ToDoModel>>()
                .Name("GetAll")
+               .Argument<StringGraphType, string?>("Like", "Argument for Get ToDos")
+               .Argument<ToDosSortOrderType, ToDosSortOrder?>("SortOrder", "Argument for Get ToDos")
+               .Argument<IntGraphType, int?>("CategoryId", "Argument for Get ToDos")
                .ResolveAsync(async context =>
                {
-                   return await toDoRepository.GetWithCategoryAsync("", ToDosSortOrder.DeadlineAcs, null);
+                   string? like = context.GetArgument<string?>("Like");
+                   ToDosSortOrder sortOrder = context.GetArgument<ToDosSortOrder?>("SortOrder") ?? ToDosSortOrder.DeadlineAcs;
+                   int? categoryId = context.GetArgument<int?>("CategoryId");
+                   return await toDoRepository.GetWithCategoryAsync(like, sortOrder, categoryId);
                });
 
             Field<NonNullGraphType<ToDoType>, ToDoModel>()
