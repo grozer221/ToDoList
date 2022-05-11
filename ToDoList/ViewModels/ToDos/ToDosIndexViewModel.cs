@@ -5,8 +5,8 @@ namespace ToDoList.ViewModels.ToDos
     public class ToDosIndexViewModel 
     {
         public ToDosCreateViewModel CreateToDo { get; set; }
-        public List<ToDoIndexViewModel> ToDos { get; set; }
-        public List<CategoryModel> Categories { get; set; }
+        public IEnumerable<ToDoIndexViewModel> ToDos { get; set; }
+        public IEnumerable<CategoryModel> Categories { get; set; }
 
         public class ToDoIndexViewModel
         {

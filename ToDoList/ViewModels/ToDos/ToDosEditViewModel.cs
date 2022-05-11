@@ -6,7 +6,7 @@ namespace ToDoList.ViewModels.ToDos
     public class ToDosEditViewModel
     {
         public ToDoEditViewModel ToDo { get; set; }
-        public List<CategoryModel> Categories { get; set; }
+        public IEnumerable<CategoryModel> Categories { get; set; }
     }
 
     public class ToDoEditViewModel : ToDosCreateViewModel

@@ -3,12 +3,11 @@ using ToDoList.Business.Models;
 
 namespace ToDoList.Business.Repositories;
 
-public interface IToDoRepository : IRepository
+public interface IToDoRepository
 {
     Task<ToDoModel> GetByIdAsync(int id);
-    Task<List<ToDoModel>> GetWithCategoryAsync(string? like, ToDosSortOrder sortOrder, int? categoryId);
+    Task<IEnumerable<ToDoModel>> GetWithCategoryAsync(string? like, ToDosSortOrder sortOrder, int? categoryId);
     Task<ToDoModel> CreateAsync(ToDoModel toDo);
     Task<ToDoModel> UpdateAsync(ToDoModel toDo);
-    Task RemoveAsync(int id);
-
+    Task<ToDoModel> RemoveAsync(int id);
 }

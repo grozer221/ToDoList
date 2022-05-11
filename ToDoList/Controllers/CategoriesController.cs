@@ -8,32 +8,31 @@ namespace ToDoList.Controllers
 {
     public class CategoriesController : Controller
     {
-        private readonly ICategoryRepository CategoryRepository;
-        private readonly IMapper Mapper;
+        private readonly ICategoryRepository categoryRepository;
+        private readonly IMapper mapper;
 
         public CategoriesController(IEnumerable<ICategoryRepository> categoryRepositories, IMapper mapper, IHttpContextAccessor httpContextAccessor)
         {
-            DataProvider dataProvider;
-            Enum.TryParse(httpContextAccessor.HttpContext.Request.Cookies["DataProvider"], out dataProvider);
-            CategoryRepository = categoryRepositories.GetPropered(dataProvider);
-            Mapper = mapper;
+            string? dataProvider = httpContextAccessor.HttpContext.Request.Cookies["DataProvider"];
+            categoryRepository = categoryRepositories.GetPropered(dataProvider);
+            this.mapper = mapper;
         }
 
         // GET: CategoriesController
         public async Task<IActionResult> Index(string? like, CategoriesSortOrder sortOrder)
         {
-            var categories = await CategoryRepository.GetAsync(like, sortOrder);
-            return View(Mapper.Map<IEnumerable<CategoriesIndexViewModel>>(categories));
+            var categories = await categoryRepository.GetAsync(like, sortOrder);
+            return View(mapper.Map<IEnumerable<CategoriesIndexViewModel>>(categories));
         }
 
         // GET: CategoriesController/Details/5
         public async Task<IActionResult> Details(int id)
         {
-            CategoryModel category = await CategoryRepository.GetByIdWithTodosAsync(id);
+            CategoryModel category = await categoryRepository.GetByIdWithTodosAsync(id);
             if(category == null)
                 return View(nameof(NotFound));
 
-            return View(Mapper.Map<CategoriesDetailsViewModel>(category));
+            return View(mapper.Map<CategoriesDetailsViewModel>(category));
         }
 
         // GET: CategoriesController/Create
@@ -49,19 +48,19 @@ namespace ToDoList.Controllers
             if (!ModelState.IsValid)
                 return View(categoriesCreateViewModel);
 
-            CategoryModel category = Mapper.Map<CategoryModel>(categoriesCreateViewModel);
-            await CategoryRepository.CreateAsync(category);
+            CategoryModel category = mapper.Map<CategoryModel>(categoriesCreateViewModel);
+            await categoryRepository.CreateAsync(category);
             return RedirectToAction(nameof(Index));
         }
 
         // GET: CategoriesController/Edit/5
         public async Task<IActionResult> Edit(int id)
         {
-            CategoryModel category = await CategoryRepository.GetByIdAsync(id);
+            CategoryModel category = await categoryRepository.GetByIdAsync(id);
             if (category == null)
                 return View(nameof(NotFound));
 
-            return View(Mapper.Map<CategoriesEditViewModel>(category));
+            return View(mapper.Map<CategoriesEditViewModel>(category));
         }
 
         // POST: CategoriesController/Edit/5
@@ -73,8 +72,8 @@ namespace ToDoList.Controllers
 
             try
             {
-                CategoryModel category = Mapper.Map<CategoryModel>(categoriesEditViewModel);
-                await CategoryRepository.UpdateAsync(category);
+                CategoryModel category = mapper.Map<CategoryModel>(categoriesEditViewModel);
+                await categoryRepository.UpdateAsync(category);
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
@@ -87,22 +86,22 @@ namespace ToDoList.Controllers
         // GET: CategoriesController/Delete/5
         public async Task<IActionResult> Delete(int id)
         {
-            CategoryModel category = await CategoryRepository.GetByIdAsync(id);
+            CategoryModel category = await categoryRepository.GetByIdAsync(id);
             if (category == null)
                 return View(nameof(NotFound));
 
-            return View(Mapper.Map<CategoriesDeleteViewModel>(category));
+            return View(mapper.Map<CategoriesDeleteViewModel>(category));
         }
 
         // POST: CategoriesController/Delete/5
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            CategoryModel category = await CategoryRepository.GetByIdAsync(id);
+            CategoryModel category = await categoryRepository.GetByIdAsync(id);
             if (category == null)
                 return View(nameof(NotFound));
 
-            await CategoryRepository.RemoveAsync(category.Id);
+            await categoryRepository.RemoveAsync(category.Id);
             return RedirectToAction(nameof(Index));
         }
 

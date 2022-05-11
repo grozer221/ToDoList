@@ -34,7 +34,7 @@
                         </li>
                     </ul>
                     <ul class="navbar-nav">
-                        <form asp-controller="Settings" asp-action="ChangeDataProvider" onchange="this.submit()">
+                        <form>
                             <select name="dataProvider" id="dataProvider" class="form-control">
                                 @foreach (var dataProvider in Enum.GetNames(typeof(DataProvider)))
                                 {

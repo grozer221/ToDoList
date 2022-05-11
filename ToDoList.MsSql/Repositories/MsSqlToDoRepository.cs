@@ -1,5 +1,5 @@
 ﻿using Dapper;
-using System.Data;
+using System.Data.SqlClient;
 using ToDoList.Business.Enums;
 using ToDoList.Business.Models;
 using ToDoList.Business.Repositories;
@@ -8,20 +8,28 @@ namespace ToDoList.MsSql.Repositories
 {
     public class MSSqlToDoRepository : IToDoRepository
     {
-        private readonly IDbConnection DbConnection;
-
-        public MSSqlToDoRepository(IDbConnection dbConnection)
+        private readonly string connectionString;
+        private SqlConnection DbConnection
         {
-            DbConnection = dbConnection;
+            get { return new SqlConnection(connectionString); }
+        }
+
+        public MSSqlToDoRepository(string connectionString)
+        {
+            this.connectionString = connectionString;
         }
 
         public async Task<ToDoModel> GetByIdAsync(int id)
         {
             string query = $"select * from ToDos where id = @id";
-            return await DbConnection.QueryFirstOrDefaultAsync<ToDoModel>(query, new { id });
+            using (var connection = DbConnection)
+            {
+                await connection.OpenAsync();
+                return await connection.QueryFirstOrDefaultAsync<ToDoModel>(query, new { id });
+            }
         }
 
-        public async Task<List<ToDoModel>> GetWithCategoryAsync(string? like = null, ToDosSortOrder sortOrder = ToDosSortOrder.DeadlineAcs, int? categoryId = null)
+        public async Task<IEnumerable<ToDoModel>> GetWithCategoryAsync(string? like = null, ToDosSortOrder sortOrder = ToDosSortOrder.DeadlineAcs, int? categoryId = null)
         {
             like = like ?? "";
             like = $"%{like}%";
@@ -53,13 +61,16 @@ namespace ToDoList.MsSql.Repositories
                     query += GetOrderBy("DateComplete", "desc");
                     break;
             }
-            var toDos = await DbConnection.QueryAsync<ToDoModel, CategoryModel, ToDoModel>(query, (toDo, category) =>
+            using (var connection = DbConnection)
             {
-                toDo.CategoryId = category?.Id;
-                toDo.Category = category;
-                return toDo;
-            }, new { like, categoryId });
-            return toDos.ToList();
+                await connection.OpenAsync();
+                return await connection.QueryAsync<ToDoModel, CategoryModel, ToDoModel>(query, (toDo, category) =>
+                {
+                    toDo.CategoryId = category?.Id;
+                    toDo.Category = category;
+                    return toDo;
+                }, new { like, categoryId });
+            }
         }
 
         private string GetOrderBy(string columnName, string typeColumnName)
@@ -92,8 +103,12 @@ namespace ToDoList.MsSql.Repositories
                         (Name, IsComplete, Deadline, CategoryId, CreatedAt, UpdatedAt) 
                         values (@Name, @IsComplete, @Deadline, @CategoryId, @CreatedAt, @UpdatedAt);
                         SELECT CAST(SCOPE_IDENTITY() as int);";
-            toDo.Id = await DbConnection.QuerySingleAsync<int>(query, toDo);
-            return toDo;
+            using (var connection = DbConnection)
+            {
+                await connection.OpenAsync();
+                toDo.Id = await connection.QuerySingleAsync<int>(query, toDo);
+                return toDo;
+            }
         }
 
         public async Task<ToDoModel> UpdateAsync(ToDoModel toDo)
@@ -118,18 +133,27 @@ namespace ToDoList.MsSql.Repositories
                 toDo.DateComplete = toDoIsExists.DateComplete;
 
             toDo.UpdatedAt = dateTimeNow;
-            await DbConnection.ExecuteAsync(query, toDo);
-            return toDo;
+            using (var connection = DbConnection)
+            {
+                await connection.OpenAsync();
+                await connection.ExecuteAsync(query, toDo);
+                return toDo;
+            }
         }
 
-        public async Task RemoveAsync(int id)
+        public async Task<ToDoModel> RemoveAsync(int id)
         {
             ToDoModel toDoIsExists = await GetByIdAsync(id);
             if (toDoIsExists == null)
                 throw new Exception($"ToDo with id {id} does not exists");
 
             string query = $"delete from ToDos where id = @id";
-            await DbConnection.ExecuteAsync(query, new { id });
-        }
+            using (var connection = DbConnection)
+            {
+                await connection.OpenAsync();
+                await connection.ExecuteAsync(query, new { id });
+            }
+            return toDoIsExists;
+        }  
     }
 }

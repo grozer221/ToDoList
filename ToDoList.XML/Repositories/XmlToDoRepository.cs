@@ -9,26 +9,27 @@ namespace ToDoList.XML.Repositories
 {
     public class XmlToDoRepository : IToDoRepository
     {
-        private const string XmlFileName = "ToDoList.xml";
-        private readonly XmlSerializer XmlSerializer;
+        private readonly string xmlFileName;
+        private readonly XmlSerializer xmlSerializer;
 
-        public XmlToDoRepository()
+        public XmlToDoRepository(string xmlFileName)
         {
-            if (!File.Exists(XmlFileName))
+            this.xmlFileName = xmlFileName;
+            if (!File.Exists(this.xmlFileName))
             {
                 XDocument document = new XDocument();
-                XElement dataWrapper = new XElement(nameof(DataWrapper));
+                XElement dataWrapper = new XElement(nameof(XML.DataWrapper));
                 document.Add(dataWrapper);
-                document.Save(XmlFileName);
+                document.Save(this.xmlFileName);
             }
-            XmlSerializer = new XmlSerializer(typeof(DataWrapper));
+            xmlSerializer = new XmlSerializer(typeof(DataWrapper));
         }
 
         public Task<ToDoModel> GetByIdAsync(int id)
         {
-            using (FileStream fs = new FileStream(XmlFileName, FileMode.OpenOrCreate))
+            using (FileStream fs = new FileStream(xmlFileName, FileMode.OpenOrCreate))
             {
-                DataWrapper? data = (DataWrapper?)XmlSerializer.Deserialize(fs);
+                DataWrapper? data = (DataWrapper?)xmlSerializer.Deserialize(fs);
                 if (data == null || data.ToDos == null)
                     return null;
                 ToDoModel toDo = data.ToDos.SingleOrDefault(t => t.Id == id);
@@ -36,12 +37,12 @@ namespace ToDoList.XML.Repositories
             }
         }
 
-        public Task<List<ToDoModel>> GetWithCategoryAsync(string? like = null, ToDosSortOrder sortOrder = ToDosSortOrder.DeadlineAcs, int? categoryId = null)
+        public Task<IEnumerable<ToDoModel>> GetWithCategoryAsync(string? like = null, ToDosSortOrder sortOrder = ToDosSortOrder.DeadlineAcs, int? categoryId = null)
         {
             like ??= string.Empty;
-            using (FileStream fs = new FileStream(XmlFileName, FileMode.OpenOrCreate))
+            using (FileStream fs = new FileStream(xmlFileName, FileMode.OpenOrCreate))
             {
-                DataWrapper? data = (DataWrapper?)XmlSerializer.Deserialize(fs);
+                DataWrapper? data = (DataWrapper?)xmlSerializer.Deserialize(fs);
                 if (data == null)
                     data = new DataWrapper();
                 if (data.ToDos == null)
@@ -80,7 +81,7 @@ namespace ToDoList.XML.Repositories
                 {
                     toDo.Category = data.Categories.SingleOrDefault(c => c.Id == toDo.CategoryId);
                 }
-                return Task.FromResult(toDos.ToList());
+                return Task.FromResult(toDos);
             }
         }
 
@@ -105,14 +106,14 @@ namespace ToDoList.XML.Repositories
         public Task<ToDoModel> CreateAsync(ToDoModel toDo)
         {
             DataWrapper? data;
-            using (FileStream fs = new FileStream(XmlFileName, FileMode.OpenOrCreate))
+            using (FileStream fs = new FileStream(xmlFileName, FileMode.OpenOrCreate))
             {
-                data = (DataWrapper?)XmlSerializer.Deserialize(fs);
+                data = (DataWrapper?)xmlSerializer.Deserialize(fs);
 
                 if (data == null || data.ToDos == null)
                     toDo.Id = 1;
                 else
-                    toDo.Id = data.ToDos.Count + 1;
+                    toDo.Id = data.ToDos.Max(t => t.Id) + 1;
 
                 if (toDo.CategoryId == 0)
                     toDo.CategoryId = null;
@@ -120,14 +121,14 @@ namespace ToDoList.XML.Repositories
                 toDo.CreatedAt = dateTimeNow;
                 toDo.UpdatedAt = dateTimeNow;
             }
-            using (FileStream fs = new FileStream(XmlFileName, FileMode.Truncate))
+            using (FileStream fs = new FileStream(xmlFileName, FileMode.Truncate))
             {
                 if (data == null)
                     data = new DataWrapper();
                 if (data.ToDos == null)
                     data.ToDos = new List<ToDoModel>();
                 data.ToDos.Add(toDo);
-                XmlSerializer.Serialize(fs, data);
+                xmlSerializer.Serialize(fs, data);
             }
             return Task.FromResult(toDo);
         }
@@ -153,35 +154,36 @@ namespace ToDoList.XML.Repositories
             toDo.UpdatedAt = dateTimeNow;
 
             DataWrapper data;
-            using (FileStream fs = new FileStream(XmlFileName, FileMode.OpenOrCreate))
+            using (FileStream fs = new FileStream(xmlFileName, FileMode.OpenOrCreate))
             {
-                data = (DataWrapper)XmlSerializer.Deserialize(fs);
+                data = (DataWrapper)xmlSerializer.Deserialize(fs);
             }
-            using (FileStream fs = new FileStream(XmlFileName, FileMode.Truncate))
+            using (FileStream fs = new FileStream(xmlFileName, FileMode.Truncate))
             {
                 int toDoIndex = data.ToDos.FindIndex(t => t.Id == toDo.Id);
                 data.ToDos[toDoIndex] = toDo;
-                XmlSerializer.Serialize(fs, data);
+                xmlSerializer.Serialize(fs, data);
             }
             return toDo;
         }
 
-        public async Task RemoveAsync(int id)
+        public async Task<ToDoModel> RemoveAsync(int id)
         {
             ToDoModel toDoIsExists = await GetByIdAsync(id);
             if (toDoIsExists == null)
                 throw new Exception($"ToDo with id {id} does not exists");
 
             DataWrapper data;
-            using (FileStream fs = new FileStream(XmlFileName, FileMode.OpenOrCreate))
+            using (FileStream fs = new FileStream(xmlFileName, FileMode.OpenOrCreate))
             {
-                data = (DataWrapper)XmlSerializer.Deserialize(fs);
+                data = (DataWrapper)xmlSerializer.Deserialize(fs);
             }
-            using (FileStream fs = new FileStream(XmlFileName, FileMode.Truncate))
+            using (FileStream fs = new FileStream(xmlFileName, FileMode.Truncate))
             {
                 data.ToDos = data.ToDos.Where(t => t.Id != id).ToList();
-                XmlSerializer.Serialize(fs, data);
+                xmlSerializer.Serialize(fs, data);
             }
+            return toDoIsExists;
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿using Dapper;
-using System.Data;
+using MySql.Data.MySqlClient;
 using ToDoList.Business.Enums;
 using ToDoList.Business.Models;
 using ToDoList.Business.Repositories;
@@ -8,19 +8,28 @@ namespace ToDoList.MySql.Repositories
 {
     public class MySqlCategoryRepository : ICategoryRepository
     {
-        private readonly IDbConnection DbConnection;
-        public MySqlCategoryRepository(IDbConnection dbConnection)
+        private readonly string connectionString;
+        private MySqlConnection DbConnection
         {
-            DbConnection = dbConnection;
+            get { return new MySqlConnection(connectionString); }
+        }
+
+        public MySqlCategoryRepository(string connectionString)
+        {
+            this.connectionString = connectionString;
         }
 
         public async Task<CategoryModel> GetByIdAsync(int id)
         {
             string query = $"select * from Categories where id = @id";
-            return await DbConnection.QueryFirstOrDefaultAsync<CategoryModel>(query, new { id });
+            using (var connection = DbConnection)
+            {
+                await connection.OpenAsync();
+                return await connection.QueryFirstOrDefaultAsync<CategoryModel>(query, new { id });
+            }
         }
 
-        public async Task<List<CategoryModel>> GetAsync(string? like, CategoriesSortOrder sortOrder)
+        public async Task<IEnumerable<CategoryModel>> GetAsync(string? like, CategoriesSortOrder sortOrder)
         {
             like = like ?? "";
             like = $"%{like}%";
@@ -42,8 +51,11 @@ namespace ToDoList.MySql.Repositories
                     query += $"order by Categories.CreatedAt desc";
                     break;
             }
-            var categories = await DbConnection.QueryAsync<CategoryModel>(query, new { like });
-            return categories.ToList();
+            using (var connection = DbConnection)
+            {
+                await connection.OpenAsync();
+                return await connection.QueryAsync<CategoryModel>(query, new { like });
+            }
         }
 
         public async Task<CategoryModel> GetByIdWithTodosAsync(int id)
@@ -52,23 +64,26 @@ namespace ToDoList.MySql.Repositories
             return categories.FirstOrDefault(c => c.Id == id);
         }
 
-        public async Task<List<CategoryModel>> GetWithTodosAsync()
+        public async Task<IEnumerable<CategoryModel>> GetWithTodosAsync()
         {
             string query = @"select * from Categories 
                             left join ToDos on Categories.Id = ToDos.CategoryId";
             var lookup = new Dictionary<int, CategoryModel>();
-            var categories = await DbConnection.QueryAsync<CategoryModel, ToDoModel, CategoryModel>(query, (c, toDo) =>
+            using (var connection = DbConnection)
             {
-                CategoryModel category;
-                if (!lookup.TryGetValue(c.Id, out category))
+                await connection.OpenAsync();
+                return await connection.QueryAsync<CategoryModel, ToDoModel, CategoryModel>(query, (c, toDo) =>
                 {
-                    lookup.Add(c.Id, category = c);
-                }
-                if (toDo != null)
-                    category.ToDos.Add(toDo);
-                return category;
-            });
-            return categories.ToList();
+                    CategoryModel category;
+                    if (!lookup.TryGetValue(c.Id, out category))
+                    {
+                        lookup.Add(c.Id, category = c);
+                    }
+                    if (toDo != null)
+                        category.ToDos.Add(toDo);
+                    return category;
+                });
+            }
         }
 
         public async Task<CategoryModel> CreateAsync(CategoryModel category)
@@ -80,8 +95,13 @@ namespace ToDoList.MySql.Repositories
                             (Name, CreatedAt, UpdatedAt) 
                             values (@Name, @CreatedAt, @UpdatedAt);
                             SELECT LAST_INSERT_ID();";
-            category.Id = await DbConnection.QuerySingleAsync<int>(query, category);
-            return category;
+
+            using (var connection = DbConnection)
+            {
+                await connection.OpenAsync();
+                category.Id = await connection.QuerySingleAsync<int>(query, category);
+                return category;
+            }
         }
 
         public async Task<CategoryModel> UpdateAsync(CategoryModel category)
@@ -94,11 +114,15 @@ namespace ToDoList.MySql.Repositories
                             set Name = @Name, UpdatedAt = @UpdatedAt
                             where id = @id";
             category.UpdatedAt = DateTime.Now;
-            await DbConnection.ExecuteAsync(query, category);
-            return category;
+            using (var connection = DbConnection)
+            {
+                await connection.OpenAsync();
+                await connection.ExecuteAsync(query, category);
+                return category;
+            }
         }
 
-        public async Task RemoveAsync(int id)
+        public async Task<CategoryModel> RemoveAsync(int id)
         {
             CategoryModel categoryIsExists = await GetByIdAsync(id);
             if (categoryIsExists == null)
@@ -106,7 +130,12 @@ namespace ToDoList.MySql.Repositories
 
             string query = @"delete from Categories 
                             where id = @id";
-            await DbConnection.ExecuteAsync(query, new { id });
+            using (var connection = DbConnection)
+            {
+                await connection.OpenAsync();
+                await connection.ExecuteAsync(query, new { id });
+            }
+            return categoryIsExists;
         }
     }
 }

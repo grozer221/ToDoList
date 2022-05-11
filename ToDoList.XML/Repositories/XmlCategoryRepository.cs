@@ -8,27 +8,28 @@ namespace ToDoList.XML.Repositories
 {
     public class XmlCategoryRepository : ICategoryRepository
     {
-        private const string XmlFileName = "ToDoList.xml";
-        private readonly XmlSerializer XmlSerializer;
+        private readonly string xmlFileName;
+        private readonly XmlSerializer xmlSerializer;
 
-        public XmlCategoryRepository()
+        public XmlCategoryRepository(string xmlFileName)
         {
-            if (!File.Exists(XmlFileName))
+            this.xmlFileName = xmlFileName;
+            if (!File.Exists(xmlFileName))
             {
                 XDocument document = new XDocument();
                 XElement dataWrapper = new XElement(nameof(DataWrapper));
                 document.Add(dataWrapper);
-                document.Save(XmlFileName);
+                document.Save(xmlFileName);
             }
-            XmlSerializer = new XmlSerializer(typeof(DataWrapper));
+            xmlSerializer = new XmlSerializer(typeof(DataWrapper));
         }
 
-        public Task<List<CategoryModel>> GetAsync(string? like, CategoriesSortOrder sortOrder)
+        public Task<IEnumerable<CategoryModel>> GetAsync(string? like, CategoriesSortOrder sortOrder)
         {
             like ??= string.Empty;
-            using (FileStream fs = new FileStream(XmlFileName, FileMode.OpenOrCreate))
+            using (FileStream fs = new FileStream(xmlFileName, FileMode.OpenOrCreate))
             {
-                DataWrapper? data = (DataWrapper?)XmlSerializer.Deserialize(fs);
+                DataWrapper? data = (DataWrapper?)xmlSerializer.Deserialize(fs);
                 if (data == null)
                     data = new DataWrapper();
                 if (data.Categories == null)
@@ -49,15 +50,15 @@ namespace ToDoList.XML.Repositories
                         categories = categories.OrderByDescending(c => c.CreatedAt);
                         break;
                 }
-                return Task.FromResult(categories.ToList());
+                return Task.FromResult(categories);
             }
         }
 
         public Task<CategoryModel> GetByIdAsync(int id)
         {
-            using (FileStream fs = new FileStream(XmlFileName, FileMode.OpenOrCreate))
+            using (FileStream fs = new FileStream(xmlFileName, FileMode.OpenOrCreate))
             {
-                DataWrapper? data = (DataWrapper?)XmlSerializer.Deserialize(fs);
+                DataWrapper? data = (DataWrapper?)xmlSerializer.Deserialize(fs);
                 if (data == null || data.Categories == null)
                     return null;
                 CategoryModel category = data.Categories.SingleOrDefault(t => t.Id == id);
@@ -68,9 +69,9 @@ namespace ToDoList.XML.Repositories
         public async Task<CategoryModel> GetByIdWithTodosAsync(int id)
         {
             CategoryModel category = await GetByIdAsync(id);
-            using (FileStream fs = new FileStream(XmlFileName, FileMode.OpenOrCreate))
+            using (FileStream fs = new FileStream(xmlFileName, FileMode.OpenOrCreate))
             {
-                DataWrapper? data = (DataWrapper?)XmlSerializer.Deserialize(fs);
+                DataWrapper? data = (DataWrapper?)xmlSerializer.Deserialize(fs);
                 if (data == null || data.ToDos == null)
                     return null;
                 category.ToDos = data.ToDos.Where(t => t.Id == id).ToList();
@@ -81,27 +82,27 @@ namespace ToDoList.XML.Repositories
         public Task<CategoryModel> CreateAsync(CategoryModel category)
         {
             DataWrapper? data;
-            using (FileStream fs = new FileStream(XmlFileName, FileMode.OpenOrCreate))
+            using (FileStream fs = new FileStream(xmlFileName, FileMode.OpenOrCreate))
             {
-                data = (DataWrapper?)XmlSerializer.Deserialize(fs);
+                data = (DataWrapper?)xmlSerializer.Deserialize(fs);
 
                 if (data == null || data.Categories == null)
                     category.Id = 1;
                 else
-                    category.Id = data.ToDos.Count + 1;
+                    category.Id = data.Categories.Max(c => c.Id) + 1;
 
                 DateTime dateTimeNow = DateTime.Now;
                 category.CreatedAt = dateTimeNow;
                 category.UpdatedAt = dateTimeNow;
             }
-            using (FileStream fs = new FileStream(XmlFileName, FileMode.Truncate))
+            using (FileStream fs = new FileStream(xmlFileName, FileMode.Truncate))
             {
                 if (data == null)
                     data = new DataWrapper();
                 if (data.Categories == null)
                     data.Categories = new List<CategoryModel>();
                 data.Categories.Add(category);
-                XmlSerializer.Serialize(fs, data);
+                xmlSerializer.Serialize(fs, data);
             }
             return Task.FromResult(category);
         }
@@ -117,35 +118,36 @@ namespace ToDoList.XML.Repositories
             category.UpdatedAt = dateTimeNow;
 
             DataWrapper data;
-            using (FileStream fs = new FileStream(XmlFileName, FileMode.OpenOrCreate))
+            using (FileStream fs = new FileStream(xmlFileName, FileMode.OpenOrCreate))
             {
-                data = (DataWrapper)XmlSerializer.Deserialize(fs);
+                data = (DataWrapper)xmlSerializer.Deserialize(fs);
             }
-            using (FileStream fs = new FileStream(XmlFileName, FileMode.Truncate))
+            using (FileStream fs = new FileStream(xmlFileName, FileMode.Truncate))
             {
                 int categoryIndex = data.Categories.FindIndex(c => c.Id == category.Id);
                 data.Categories[categoryIndex] = category;
-                XmlSerializer.Serialize(fs, data);
+                xmlSerializer.Serialize(fs, data);
             }
             return category;
         }
 
-        public async Task RemoveAsync(int id)
+        public async Task<CategoryModel> RemoveAsync(int id)
         {
             CategoryModel categoryIsExists = await GetByIdAsync(id);
             if (categoryIsExists == null)
                 throw new Exception($"Category with id {id} does not exists");
 
             DataWrapper data;
-            using (FileStream fs = new FileStream(XmlFileName, FileMode.OpenOrCreate))
+            using (FileStream fs = new FileStream(xmlFileName, FileMode.OpenOrCreate))
             {
-                data = (DataWrapper)XmlSerializer.Deserialize(fs);
+                data = (DataWrapper)xmlSerializer.Deserialize(fs);
             }
-            using (FileStream fs = new FileStream(XmlFileName, FileMode.Truncate))
+            using (FileStream fs = new FileStream(xmlFileName, FileMode.Truncate))
             {
                 data.Categories = data.Categories.Where(t => t.Id != id).ToList();
-                XmlSerializer.Serialize(fs, data);
+                xmlSerializer.Serialize(fs, data);
             }
+            return categoryIsExists;
         }
     }
 }
