@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using ToDoList.Business.Enums;
-using ToDoList.Enums;
 using ToDoList.ViewModels.Categories;
 
 namespace ToDoList.Controllers
@@ -28,7 +27,7 @@ namespace ToDoList.Controllers
         // GET: CategoriesController/Details/5
         public async Task<IActionResult> Details(int id)
         {
-            CategoryModel category = await categoryRepository.GetByIdWithTodosAsync(id);
+            CategoryModel category = await categoryRepository.GetByIdWithTodosOrDefaultAsync(id);
             if(category == null)
                 return View(nameof(NotFound));
 
@@ -56,7 +55,7 @@ namespace ToDoList.Controllers
         // GET: CategoriesController/Edit/5
         public async Task<IActionResult> Edit(int id)
         {
-            CategoryModel category = await categoryRepository.GetByIdAsync(id);
+            CategoryModel category = await categoryRepository.GetByIdOrDefaultAsync(id);
             if (category == null)
                 return View(nameof(NotFound));
 
@@ -86,7 +85,7 @@ namespace ToDoList.Controllers
         // GET: CategoriesController/Delete/5
         public async Task<IActionResult> Delete(int id)
         {
-            CategoryModel category = await categoryRepository.GetByIdAsync(id);
+            CategoryModel category = await categoryRepository.GetByIdOrDefaultAsync(id);
             if (category == null)
                 return View(nameof(NotFound));
 
@@ -97,7 +96,7 @@ namespace ToDoList.Controllers
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            CategoryModel category = await categoryRepository.GetByIdAsync(id);
+            CategoryModel category = await categoryRepository.GetByIdOrDefaultAsync(id);
             if (category == null)
                 return View(nameof(NotFound));
 

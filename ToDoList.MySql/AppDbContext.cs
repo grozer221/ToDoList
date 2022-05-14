@@ -1,4 +1,4 @@
-﻿namespace ToDoList
+﻿namespace ToDoList.MySql
 {
     public class AppDbContext
     {

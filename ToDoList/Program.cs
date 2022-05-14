@@ -1,6 +1,9 @@
 using ToDoList;
 using ToDoList.Controllers;
 using ToDoList.GraphQL;
+using ToDoList.MsSql.Extensions;
+using ToDoList.MySql.Extensions;
+using ToDoList.XML.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,7 +23,6 @@ else
 
 builder.Services.AddXmlDataProdiver(builder.Configuration.GetConnectionString("Xml"));
 
-builder.Services.AddTransient<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddGraphQLApi();
 
 var app = builder.Build();

@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using ToDoList.Business.Enums;
-using ToDoList.Enums;
 using ToDoList.ViewModels.ToDos;
 using static ToDoList.ViewModels.ToDos.ToDosIndexViewModel;
 
@@ -37,7 +36,7 @@ namespace ToDoList.Controllers
         // GET: ToDosController/Details/5
         public async Task<IActionResult> Details(int id)
         {
-            ToDoModel toDo = await toDoRepository.GetByIdAsync(id);
+            ToDoModel toDo = await toDoRepository.GetByIdOrDefaultAsync(id);
             if (toDo == null)
                 return View(nameof(NotFound));
 
@@ -68,7 +67,7 @@ namespace ToDoList.Controllers
         // GET: ToDosController/Edit/5
         public async Task<IActionResult> Edit(int id)
         {
-            ToDoModel toDo = await toDoRepository.GetByIdAsync(id);
+            ToDoModel toDo = await toDoRepository.GetByIdOrDefaultAsync(id);
             if (toDo == null)
                 return View(nameof(NotFound));
             ToDosEditViewModel toDosEditViewModel = new ToDosEditViewModel();
@@ -104,7 +103,7 @@ namespace ToDoList.Controllers
         // GET: ToDosController/Delete/5
         public async Task<IActionResult> Delete(int id)
         {
-            ToDoModel toDo = await toDoRepository.GetByIdAsync(id);
+            ToDoModel toDo = await toDoRepository.GetByIdOrDefaultAsync(id);
             if (toDo == null)
                 return View(nameof(NotFound));
 
@@ -115,7 +114,7 @@ namespace ToDoList.Controllers
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            ToDoModel toDo = await toDoRepository.GetByIdAsync(id);
+            ToDoModel toDo = await toDoRepository.GetByIdOrDefaultAsync(id);
             if (toDo == null)
                 return View(nameof(NotFound));
 
@@ -127,7 +126,7 @@ namespace ToDoList.Controllers
         [HttpPost]
         public async Task<IActionResult> SwitchIsComplete(int id, bool isComplete)
         {
-            ToDoModel toDo = await toDoRepository.GetByIdAsync(id);
+            ToDoModel toDo = await toDoRepository.GetByIdOrDefaultAsync(id);
             if (toDo == null)
                 return View(nameof(NotFound));
 

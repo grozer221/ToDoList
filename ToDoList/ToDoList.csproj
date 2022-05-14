@@ -7,13 +7,16 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <None Include="..\.editorconfig" Link=".editorconfig" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="FluentValidation.AspNetCore" Version="11.0.1" />
 		<PackageReference Include="GraphQL" Version="4.7.1" />
 		<PackageReference Include="GraphQL.MicrosoftDI" Version="4.7.1" />
 		<PackageReference Include="GraphQL.Server.Authorization.AspNetCore" Version="5.2.0" />
 		<PackageReference Include="GraphQL.Server.Transports.AspNetCore" Version="5.2.0" />
 		<PackageReference Include="GraphQL.Server.Transports.AspNetCore.SystemTextJson" Version="5.2.0" />
-		<PackageReference Include="GraphQL.Server.Transports.Subscriptions.WebSockets" Version="5.2.0" />
 		<PackageReference Include="GraphQL.Server.Ui.Altair" Version="5.2.0" />
 		<PackageReference Include="AutoMapper" Version="11.0.1" />
 		<PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="11.0.0" />

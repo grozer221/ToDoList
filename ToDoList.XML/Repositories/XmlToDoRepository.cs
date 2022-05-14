@@ -25,7 +25,7 @@ namespace ToDoList.XML.Repositories
             xmlSerializer = new XmlSerializer(typeof(DataWrapper));
         }
 
-        public Task<ToDoModel> GetByIdAsync(int id)
+        public Task<ToDoModel> GetByIdOrDefaultAsync(int id)
         {
             using (FileStream fs = new FileStream(xmlFileName, FileMode.OpenOrCreate))
             {
@@ -37,7 +37,15 @@ namespace ToDoList.XML.Repositories
             }
         }
 
-        public Task<IEnumerable<ToDoModel>> GetWithCategoryAsync(string? like = null, ToDosSortOrder sortOrder = ToDosSortOrder.DeadlineAcs, int? categoryId = null)
+        public async Task<ToDoModel> GetByIdAsync(int id)
+        {
+            var toDo = await GetByIdOrDefaultAsync(id);
+            if (toDo == null)
+                throw new Exception($"ToDo with id {id} not found");
+            return toDo;
+        }
+
+        public Task<IEnumerable<ToDoModel>> GetWithCategoryOrDefaultAsync(string? like, ToDosSortOrder sortOrder, int? categoryId)
         {
             like ??= string.Empty;
             using (FileStream fs = new FileStream(xmlFileName, FileMode.OpenOrCreate))
@@ -83,6 +91,14 @@ namespace ToDoList.XML.Repositories
                 }
                 return Task.FromResult(toDos);
             }
+        }
+
+        public Task<IEnumerable<ToDoModel>> GetWithCategoryAsync(string? like = null, ToDosSortOrder sortOrder = ToDosSortOrder.DeadlineAcs, int? categoryId = null)
+        {
+            var toDos = GetWithCategoryOrDefaultAsync(like, sortOrder, categoryId);
+            if (toDos == null)
+                throw new Exception($"ToDos not found");
+            return toDos;
         }
 
         private IEnumerable<ToDoModel> GetOrderedBy(IEnumerable<ToDoModel> toDos, Func<ToDoModel, object> keySelector1, Func<ToDoModel, object> keySelector2, OrderBy orderBy)

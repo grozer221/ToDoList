@@ -19,7 +19,7 @@ namespace ToDoList.MySql.Repositories
             this.connectionString = connectionString;
         }
 
-        public async Task<CategoryModel> GetByIdAsync(int id)
+        public async Task<CategoryModel> GetByIdOrDefaultAsync(int id)
         {
             string query = $"select * from Categories where id = @id";
             using (var connection = DbConnection)
@@ -29,7 +29,15 @@ namespace ToDoList.MySql.Repositories
             }
         }
 
-        public async Task<IEnumerable<CategoryModel>> GetAsync(string? like, CategoriesSortOrder sortOrder)
+        public async Task<CategoryModel> GetByIdAsync(int id)
+        {
+            var category = await GetByIdOrDefaultAsync(id);
+            if (category == null)
+                throw new Exception($"Category with id {id} not found");
+            return category;
+        }
+
+        public async Task<IEnumerable<CategoryModel>> GetOrDefaultAsync(string? like, CategoriesSortOrder sortOrder)
         {
             like = like ?? "";
             like = $"%{like}%";
@@ -58,10 +66,26 @@ namespace ToDoList.MySql.Repositories
             }
         }
 
-        public async Task<CategoryModel> GetByIdWithTodosAsync(int id)
+        public async Task<IEnumerable<CategoryModel>> GetAsync(string? like, CategoriesSortOrder sortOrder)
+        {
+            var categories = await GetOrDefaultAsync(like, sortOrder);
+            if (categories == null)
+                throw new Exception($"Categories not found");
+            return categories;
+        }
+
+        public async Task<CategoryModel> GetByIdWithTodosOrDefaultAsync(int id)
         {
             var categories = await GetWithTodosAsync();
             return categories.FirstOrDefault(c => c.Id == id);
+        }
+
+        public async Task<CategoryModel> GetByIdWithTodosAsync(int id)
+        {
+            var category = await GetByIdWithTodosAsync(id);
+            if (category == null)
+                throw new Exception($"Category with id {id} not found");
+            return category;
         }
 
         public async Task<IEnumerable<CategoryModel>> GetWithTodosAsync()

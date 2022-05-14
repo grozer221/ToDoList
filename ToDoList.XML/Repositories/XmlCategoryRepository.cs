@@ -24,7 +24,7 @@ namespace ToDoList.XML.Repositories
             xmlSerializer = new XmlSerializer(typeof(DataWrapper));
         }
 
-        public Task<IEnumerable<CategoryModel>> GetAsync(string? like, CategoriesSortOrder sortOrder)
+        public Task<IEnumerable<CategoryModel>> GetOrDefaultAsync(string? like, CategoriesSortOrder sortOrder)
         {
             like ??= string.Empty;
             using (FileStream fs = new FileStream(xmlFileName, FileMode.OpenOrCreate))
@@ -54,7 +54,15 @@ namespace ToDoList.XML.Repositories
             }
         }
 
-        public Task<CategoryModel> GetByIdAsync(int id)
+        public async Task<IEnumerable<CategoryModel>> GetAsync(string? like, CategoriesSortOrder sortOrder)
+        {
+            var categories = await GetOrDefaultAsync(like, sortOrder);
+            if (categories == null)
+                throw new Exception("Categories not found");
+            return categories;
+        }
+
+        public Task<CategoryModel> GetByIdOrDefaultAsync(int id)
         {
             using (FileStream fs = new FileStream(xmlFileName, FileMode.OpenOrCreate))
             {
@@ -66,7 +74,15 @@ namespace ToDoList.XML.Repositories
             }
         }
 
-        public async Task<CategoryModel> GetByIdWithTodosAsync(int id)
+        public async Task<CategoryModel> GetByIdAsync(int id)
+        {
+            var category = await GetByIdOrDefaultAsync(id);
+            if (category == null)
+                throw new Exception($"Category with id {id} not found");
+            return category;
+        }
+
+        public async Task<CategoryModel> GetByIdWithTodosOrDefaultAsync(int id)
         {
             CategoryModel category = await GetByIdAsync(id);
             using (FileStream fs = new FileStream(xmlFileName, FileMode.OpenOrCreate))
@@ -77,6 +93,14 @@ namespace ToDoList.XML.Repositories
                 category.ToDos = data.ToDos.Where(t => t.Id == id).ToList();
                 return category;
             }
+        }
+
+        public async Task<CategoryModel> GetByIdWithTodosAsync(int id)
+        {
+            var category = await GetByIdWithTodosOrDefaultAsync(id);
+            if (category == null)
+                throw new Exception($"Category with id {id} not found");
+            return category;
         }
 
         public Task<CategoryModel> CreateAsync(CategoryModel category)

@@ -19,7 +19,7 @@ namespace ToDoList.MySql.Repositories
             this.connectionString = connectionString;
         }
 
-        public async Task<ToDoModel> GetByIdAsync(int id)
+        public async Task<ToDoModel> GetByIdOrDefaultAsync(int id)
         {
             string query = $"select * from ToDos where id = @id";
             using (var connection = DbConnection)
@@ -29,7 +29,15 @@ namespace ToDoList.MySql.Repositories
             }
         }
 
-        public async Task<IEnumerable<ToDoModel>> GetWithCategoryAsync(string? like = null, ToDosSortOrder sortOrder = ToDosSortOrder.DeadlineAcs, int? categoryId = null)
+        public async Task<ToDoModel> GetByIdAsync(int id)
+        {
+            var toDo = await GetByIdOrDefaultAsync(id);
+            if (toDo == null)
+                throw new Exception($"ToDo with id {id} not found");
+            return toDo;
+        }
+
+        public async Task<IEnumerable<ToDoModel>> GetWithCategoryOrDefaultAsync(string? like, ToDosSortOrder sortOrder, int? categoryId)
         {
             like = like ?? "";
             like = $"%{like}%";
@@ -71,6 +79,14 @@ namespace ToDoList.MySql.Repositories
                     return toDo;
                 }, new { like, categoryId });
             }
+        }
+
+        public async Task<IEnumerable<ToDoModel>> GetWithCategoryAsync(string? like = null, ToDosSortOrder sortOrder = ToDosSortOrder.DeadlineAcs, int? categoryId = null)
+        {
+            var toDos = await GetWithCategoryOrDefaultAsync(like, sortOrder, categoryId);
+            if (toDos == null)
+                throw new Exception($"ToDos not found");
+            return toDos;
         }
 
         private string GetOrderBy(string columnName, string typeColumnName)

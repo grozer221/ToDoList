@@ -11,7 +11,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ToDoList.MsSql", "ToDoList.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ToDoList.MySql", "ToDoList.MySql\ToDoList.MySql.csproj", "{42E78F3F-0C06-4170-A48A-674806A88F3A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ToDoList.XML", "ToDoList.XML\ToDoList.XML.csproj", "{9A5E529D-CC3C-44D8-8BA2-AB4E3EA29054}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ToDoList.XML", "ToDoList.XML\ToDoList.XML.csproj", "{9A5E529D-CC3C-44D8-8BA2-AB4E3EA29054}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9A0C2DB3-ACA9-42A2-BC9E-7E2368154BDD}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
