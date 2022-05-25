@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.1.32328.378
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ToDoList", "ToDoList\ToDoList.csproj", "{F8B810CE-0E67-4CBF-AE8D-9D71898FE1ED}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ToDoList.Server", "ToDoList.Server\ToDoList.Server.csproj", "{F8B810CE-0E67-4CBF-AE8D-9D71898FE1ED}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ToDoList.Business", "ToDoList.Business\ToDoList.Business.csproj", "{57ABC469-69E0-4F8B-9271-30BD6F1FFCC7}"
 EndProject

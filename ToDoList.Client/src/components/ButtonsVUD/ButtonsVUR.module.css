@@ -1,0 +1,64 @@
+.buttonsVUR {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.buttonView span {
+    background-color: #009432;
+    transition: .5s all ease;
+}
+
+.buttonView:hover span {
+    background-color: #CFD3E4;
+}
+
+.buttonView svg {
+    color: white;
+    transition: .5s all ease;
+}
+
+.buttonView:hover svg,
+.buttonView span:hover svg {
+    color: #009432;
+}
+
+
+.buttonUpdate span {
+    background-color: #0652DD;
+    transition: .5s all ease;
+}
+
+.buttonUpdate:hover span {
+    background-color: #CFD3E4;
+}
+
+.buttonUpdate svg {
+    color: white;
+    transition: .5s all ease;
+}
+
+.buttonUpdate:hover svg,
+.buttonUpdate span:hover svg {
+    color: #0652DD;
+}
+
+
+.buttonRemove span {
+    background-color: red;
+    transition: .5s all ease;
+}
+
+.buttonRemove:hover span {
+    background-color: #CFD3E4;
+}
+
+.buttonRemove svg {
+    color: white;
+    transition: .5s all ease;
+}
+
+.buttonRemove:hover svg,
+.buttonRemove span:hover svg {
+    color: red;
+}
