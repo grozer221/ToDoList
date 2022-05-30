@@ -18,8 +18,7 @@
     "redux-observable": "^2.0.0",
     "rxjs": "^7.5.5",
     "typesafe-actions": "^5.1.0",
-    "typescript": "^4.4.2",
-    "web-vitals": "^2.1.0"
+    "typescript": "^4.4.2"
   },
   "devDependencies": {
     "@types/lodash.debounce": "^4.0.7",

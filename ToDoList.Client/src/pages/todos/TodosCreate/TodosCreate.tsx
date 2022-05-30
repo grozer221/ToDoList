@@ -1,13 +1,14 @@
 import React, {useEffect} from 'react';
 import {useDispatch, useSelector} from "react-redux";
-import {Col, DatePicker, Form, Input, message, Row} from "antd";
+import {Col, DatePicker, Form, Input, message, Row, Select} from "antd";
 import Title from "antd/lib/typography/Title";
 import {ButtonSubmit} from "../../../components/ButtonSubmit/ButtonSubmit";
-import {TodosCreateInputType} from "../../../gql/modules/todos/todos.mutations";
-import {todosActions} from "../../../redux/todos/todos.actions";
-import {RootState} from "../../../redux/store";
+import {TodosCreateInputType} from "../../../graphQL/modules/todos/todos.mutations";
+import {todosActions} from "../../../store/todos/todos.actions";
+import {RootState} from "../../../store/store";
 
 export const TodosCreate = () => {
+    const categories = useSelector((s: RootState) => s.categories.categories)
     const fetchCreateTodoError = useSelector((s: RootState) => s.todos.fetchCreateTodoError)
     const fetchCreateTodoLoading = useSelector((s: RootState) => s.todos.fetchCreateTodoLoading)
     const dispatch = useDispatch();
@@ -52,7 +53,11 @@ export const TodosCreate = () => {
                     <Form.Item
                         name="categoryId"
                     >
-                        <Input placeholder="Category" type={'number'}/>
+                        <Select placeholder="Category" allowClear={true}>
+                            {categories.map(category => (
+                                <Select.Option key={category.id} value={category.id}>{category.name}</Select.Option>
+                            ))}
+                        </Select>
                     </Form.Item>
                 </Col>
                 <Col span={1}>

@@ -1,25 +1,34 @@
 import React, {useCallback, useEffect} from 'react';
 import {useSearchParams} from "react-router-dom";
 import {useDispatch, useSelector} from "react-redux";
-import {RootState} from "../../../redux/store";
-import {todosActions} from "../../../redux/todos/todos.actions";
+import {RootState} from "../../../store/store";
+import {todosActions} from "../../../store/todos/todos.actions";
 import {Col, Form, message, Row, Select, Switch, Table} from "antd";
 import {ColumnsType} from "antd/es/table";
-import {Todo} from "../../../gql/modules/todos/todos.types";
+import {Todo} from "../../../graphQL/modules/todos/todos.types";
 import {ButtonsVUR} from "../../../components/ButtonsVUD/ButtonsVUR";
 import Title from 'antd/lib/typography/Title';
 import {TodosCreate} from "../TodosCreate/TodosCreate";
 import Search from "antd/es/input/Search";
 import debounce from 'lodash.debounce';
-import {ToDosSortOrder} from "../../../gql/enums/order";
+import {TodosSortOrder} from "../../../graphQL/enums/todosSortOrder";
+import {categoriesActions} from "../../../store/categories/categories.actions";
+import {camelCaseToString, stringToUSDatetime} from "../../../convertors/stringToDatetimeConvertors";
 
 export const TodosIndex = () => {
     const dispatch = useDispatch();
+    const categories = useSelector((s: RootState) => s.categories.categories)
+    const fetchCategoriesLoading = useSelector((s: RootState) => s.categories.fetchCategoriesLoading)
+    const fetchCategoriesError = useSelector((s: RootState) => s.categories.fetchCategoriesError)
     const todos = useSelector((s: RootState) => s.todos.todos)
     const fetchTodosLoading = useSelector((s: RootState) => s.todos.fetchTodosLoading)
     const fetchTodosError = useSelector((s: RootState) => s.todos.fetchTodosError)
     const fetchRemoveTodoError = useSelector((s: RootState) => s.todos.fetchRemoveTodoError)
     const [searchParams, setSearchParams] = useSearchParams();
+
+    useEffect(() => {
+        dispatch(categoriesActions.fetchCategories(null, null))
+    }, [])
 
     useEffect(() => {
         if (fetchTodosError) {
@@ -34,7 +43,8 @@ export const TodosIndex = () => {
 
     useEffect(() => {
         const likeInput = searchParams.get('like');
-        const sortOrder = searchParams.get('sortOrder');
+        const sortOrderString = searchParams.get('sortOrder');
+        const sortOrder = TodosSortOrder[sortOrderString as keyof typeof TodosSortOrder] || TodosSortOrder.deadlineDecs;
         const categoryIdString = searchParams.get('categoryId');
         const categoryId = categoryIdString ? parseInt(categoryIdString) : null;
         dispatch(todosActions.fetchTodos(likeInput, sortOrder, categoryId));
@@ -44,6 +54,16 @@ export const TodosIndex = () => {
         dispatch(todosActions.fetchRemoveTodo(id));
     }
 
+    const switchIsCompleteHandler = (todo: Todo, isComplete: boolean): void => {
+        dispatch(todosActions.fetchUpdateTodo({
+            id: todo.id,
+            isComplete: isComplete,
+            name: todo.name,
+            deadline: todo.deadline,
+            categoryId: todo.categoryId,
+        }))
+    }
+
     const columns: ColumnsType<Todo> = [
         {
             title: 'Is complete',
@@ -51,7 +71,8 @@ export const TodosIndex = () => {
             key: 'isComplete',
             width: '110px',
             render: (text, todo) => (
-                <Switch size="small" defaultChecked={todo.isComplete}/>
+                <Switch onChange={isComplete => switchIsCompleteHandler(todo, isComplete)} size="small"
+                        defaultChecked={todo.isComplete}/>
             ),
         },
         {
@@ -63,11 +84,17 @@ export const TodosIndex = () => {
             title: 'Deadline',
             dataIndex: 'deadline',
             key: 'deadline',
+            render: (text, todo) => (
+                <div>{stringToUSDatetime(text)}</div>
+            )
         },
         {
             title: 'DateComplete',
             dataIndex: 'dateComplete',
             key: 'dateComplete',
+            render: (text, todo) => (
+                <div>{stringToUSDatetime(text)}</div>
+            )
         },
         {
             title: 'Category',
@@ -97,31 +124,29 @@ export const TodosIndex = () => {
         <div>
             <TodosCreate/>
             <Title level={2}>Todos</Title>
-            <Form
-                name="TodosFilterForm"
-            >
+            <Form name="TodosFilterForm">
                 <Row>
                     <Col span={10}>
                         <Form.Item name="like">
                             <Search
-                                allowClear
-                                value={searchParams.get('like') || ''}
+                                defaultValue={searchParams.get('like') || ''}
                                 onChange={e => searchTodosHandler(e.target.value)}
                                 placeholder="Search"
                                 enterButton
                                 loading={fetchTodosLoading}
+                                allowClear={true}
                             />
                         </Form.Item>
                     </Col>
                     <Col span={7}>
                         <Form.Item name="Sort order">
                             <Select
-                                value={searchParams.get('sortOrder') || ToDosSortOrder.deadlineAcs}
-                                placeholder="Select a person"
+                                defaultValue={searchParams.get('sortOrder') || TodosSortOrder.deadlineAcs}
+                                placeholder="Sorting"
                                 onChange={sortOrder => setSearchParams({sortOrder})}
                             >
-                                {(Object.keys(ToDosSortOrder) as Array<keyof typeof ToDosSortOrder>).map(key => (
-                                    <Select.Option value={key}>{key}</Select.Option>
+                                {(Object.keys(TodosSortOrder) as Array<keyof typeof TodosSortOrder>).map(key => (
+                                    <Select.Option value={key} key={key}>{camelCaseToString(key)}</Select.Option>
                                 ))}
                             </Select>
                         </Form.Item>
@@ -129,10 +154,15 @@ export const TodosIndex = () => {
                     <Col span={7}>
                         <Form.Item name="categoryId">
                             <Select
-                                value={searchParams.get('categoryId')}
+                                defaultValue={searchParams.get('categoryId')}
                                 placeholder="Category"
                                 onChange={categoryId => setSearchParams({categoryId})}
+                                loading={fetchCategoriesLoading}
+                                allowClear={true}
                             >
+                                {categories.map(category => (
+                                    <Select.Option key={category.id} value={category.id}>{category.name}</Select.Option>
+                                ))}
                             </Select>
                         </Form.Item>
                     </Col>
