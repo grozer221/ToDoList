@@ -1,1 +1,1 @@
-web: cd $HOME/heroku_output && ./ToDoList
+web: cd $HOME/heroku_output && ./ToDoList.Server
