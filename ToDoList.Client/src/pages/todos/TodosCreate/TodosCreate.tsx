@@ -12,6 +12,7 @@ export const TodosCreate = () => {
     const fetchCreateTodoError = useSelector((s: RootState) => s.todos.fetchCreateTodoError)
     const fetchCreateTodoLoading = useSelector((s: RootState) => s.todos.fetchCreateTodoLoading)
     const dispatch = useDispatch();
+    const [form] = Form.useForm();
 
     useEffect(() => {
         if (fetchCreateTodoError) {
@@ -25,12 +26,14 @@ export const TodosCreate = () => {
         const deadline = toDosCreateInputType.deadline && new Date(toDosCreateInputType.deadline._d).toISOString();
         console.log({...toDosCreateInputType, deadline})
         dispatch(todosActions.fetchCreateTodo({...toDosCreateInputType, deadline}))
+        form.resetFields();
     }
 
     return (
         <Form
             name="TodoCreateForm"
             onFinish={onFinish}
+            form={form}
         >
             <Title level={2}>Create todo</Title>
             <Row>

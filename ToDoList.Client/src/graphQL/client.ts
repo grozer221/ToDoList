@@ -1,9 +1,10 @@
-import {ApolloClient, HttpLink, InMemoryCache} from '@apollo/client';
+import {ApolloClient, InMemoryCache} from '@apollo/client';
 import {schema} from './schema';
 
 export const client = new ApolloClient({
-    link: new HttpLink({uri: process.env.REACT_APP_GRAPH_QL_API_URL}),
+    uri: !process.env.NODE_ENV || process.env.NODE_ENV === 'development' ? '/graphql' : process.env.REACT_APP_GRAPH_QL_API_URL,
     cache: new InMemoryCache(),
+    credentials: 'include',
     defaultOptions: {
         watchQuery: {
             // fetchPolicy: 'network-only',

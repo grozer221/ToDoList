@@ -31,6 +31,15 @@ export const TodosIndex = () => {
     }, [])
 
     useEffect(() => {
+        const likeInput = searchParams.get('like');
+        const sortOrderString = searchParams.get('sortOrder');
+        const sortOrder = TodosSortOrder[sortOrderString as keyof typeof TodosSortOrder] || TodosSortOrder.deadlineDecs;
+        const categoryIdString = searchParams.get('categoryId');
+        const categoryId = categoryIdString ? parseInt(categoryIdString) : null;
+        dispatch(todosActions.fetchTodos(likeInput, sortOrder, categoryId));
+    }, [searchParams])
+
+    useEffect(() => {
         if (fetchTodosError) {
             message.error(fetchTodosError);
             dispatch(todosActions.setFetchTodosError(''));
@@ -40,15 +49,6 @@ export const TodosIndex = () => {
             dispatch(todosActions.setFetchRemoveTodoError(''));
         }
     }, [fetchTodosError, fetchRemoveTodoError])
-
-    useEffect(() => {
-        const likeInput = searchParams.get('like');
-        const sortOrderString = searchParams.get('sortOrder');
-        const sortOrder = TodosSortOrder[sortOrderString as keyof typeof TodosSortOrder] || TodosSortOrder.deadlineDecs;
-        const categoryIdString = searchParams.get('categoryId');
-        const categoryId = categoryIdString ? parseInt(categoryIdString) : null;
-        dispatch(todosActions.fetchTodos(likeInput, sortOrder, categoryId));
-    }, [searchParams])
 
     const onRemove = (id: number): void => {
         dispatch(todosActions.fetchRemoveTodo(id));
