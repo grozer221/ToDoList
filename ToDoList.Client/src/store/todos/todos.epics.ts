@@ -31,13 +31,18 @@ export const fetchTodosEpic: Epic<ReturnType<typeof todosActions.fetchTodos>, an
             from(client.query<TodosGetAllData, TodosGetAllVars>({
                 query: TODOS_GET_ALL_QUERY,
                 variables: {
+                    page: action.payload.page,
                     like: action.payload.like,
                     sortOrder: action.payload.sortOrder,
                     categoryId: action.payload.categoryId,
                     withCategory: true,
                 }
             })).pipe(
-                map(response => todosActions.setTodos(response.data.toDos.getAll)),
+                mergeMap(response => [
+                    todosActions.setTodos(response.data.toDos.get.entities),
+                    todosActions.setTotal(response.data.toDos.get.total),
+                    todosActions.setPageSize(response.data.toDos.get.pageSize),
+                ]),
                 catchError(error => of(todosActions.setFetchTodosError(error))),
                 startWith(todosActions.setFetchTodosLoading(true)),
                 endWith(todosActions.setFetchTodosLoading(false)),

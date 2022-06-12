@@ -1,5 +1,6 @@
 ﻿using System.Xml.Linq;
 using System.Xml.Serialization;
+using ToDoList.Business.Abstractions;
 using ToDoList.Business.Enums;
 using ToDoList.Business.Models;
 using ToDoList.Business.Repositories;
@@ -10,6 +11,8 @@ namespace ToDoList.XML.Repositories
     {
         private readonly string xmlFileName;
         private readonly XmlSerializer xmlSerializer;
+
+        public int Take => 3;
 
         public XmlCategoryRepository(string xmlFileName)
         {
@@ -24,7 +27,7 @@ namespace ToDoList.XML.Repositories
             xmlSerializer = new XmlSerializer(typeof(DataWrapper));
         }
 
-        public Task<IEnumerable<CategoryModel>> GetOrDefaultAsync(string? like, CategoriesSortOrder sortOrder)
+        public Task<GetEntitiesResponse<CategoryModel>> GetAsync(string? like, CategoriesSortOrder sortOrder, int page)
         {
             like ??= string.Empty;
             using (FileStream fs = new FileStream(xmlFileName, FileMode.OpenOrCreate))
@@ -35,6 +38,7 @@ namespace ToDoList.XML.Repositories
                 if (data.Categories == null)
                     data.Categories = new List<CategoryModel>();
                 var categories = data.Categories.Where(c => c.Name.Contains(like, StringComparison.OrdinalIgnoreCase));
+                int total = categories.Count();
                 switch (sortOrder)
                 {
                     case CategoriesSortOrder.NameAsc:
@@ -50,19 +54,18 @@ namespace ToDoList.XML.Repositories
                         categories = categories.OrderByDescending(c => c.CreatedAt);
                         break;
                 }
-                return Task.FromResult(categories);
+                int skip = (page - 1) * Take;
+                categories.Skip(skip).Take(Take);
+                return Task.FromResult(new GetEntitiesResponse<CategoryModel>
+                {
+                    Entities = categories,
+                    Total = total,
+                    PageSize = Take,
+                });
             }
         }
 
-        public async Task<IEnumerable<CategoryModel>> GetAsync(string? like, CategoriesSortOrder sortOrder)
-        {
-            var categories = await GetOrDefaultAsync(like, sortOrder);
-            if (categories == null)
-                throw new Exception("Categories not found");
-            return categories;
-        }
-
-        public Task<CategoryModel> GetByIdOrDefaultAsync(int id)
+        public Task<CategoryModel> GetByIdAsync(int id)
         {
             using (FileStream fs = new FileStream(xmlFileName, FileMode.OpenOrCreate))
             {
@@ -72,35 +75,6 @@ namespace ToDoList.XML.Repositories
                 CategoryModel category = data.Categories.SingleOrDefault(t => t.Id == id);
                 return Task.FromResult(category);
             }
-        }
-
-        public async Task<CategoryModel> GetByIdAsync(int id)
-        {
-            var category = await GetByIdOrDefaultAsync(id);
-            if (category == null)
-                throw new Exception($"Category with id {id} not found");
-            return category;
-        }
-
-        public async Task<CategoryModel> GetByIdWithTodosOrDefaultAsync(int id)
-        {
-            CategoryModel category = await GetByIdAsync(id);
-            using (FileStream fs = new FileStream(xmlFileName, FileMode.OpenOrCreate))
-            {
-                DataWrapper? data = (DataWrapper?)xmlSerializer.Deserialize(fs);
-                if (data == null || data.ToDos == null)
-                    return null;
-                category.ToDos = data.ToDos.Where(t => t.Id == id).ToList();
-                return category;
-            }
-        }
-
-        public async Task<CategoryModel> GetByIdWithTodosAsync(int id)
-        {
-            var category = await GetByIdWithTodosOrDefaultAsync(id);
-            if (category == null)
-                throw new Exception($"Category with id {id} not found");
-            return category;
         }
 
         public Task<CategoryModel> CreateAsync(CategoryModel category)

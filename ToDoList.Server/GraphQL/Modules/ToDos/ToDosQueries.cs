@@ -1,7 +1,9 @@
 ﻿using GraphQL;
 using GraphQL.Types;
+using ToDoList.Business.Abstractions;
 using ToDoList.Business.Enums;
 using ToDoList.GraphQL.EnumTypes;
+using ToDoList.Server.GraphQL.Types;
 
 namespace ToDoList.GraphQL.Modules.ToDos
 {
@@ -14,17 +16,19 @@ namespace ToDoList.GraphQL.Modules.ToDos
             string? dataProvider = httpContextAccessor.HttpContext.Request.Cookies["DataProvider"];
             toDoRepository = toDoRepositories.GetPropered(dataProvider);
 
-            Field<NonNullGraphType<ListGraphType<ToDoType>>, IEnumerable<ToDoModel>>()
-               .Name("GetAll")
+            Field<NonNullGraphType<GetEntitiesResponseType<ToDoType, ToDoModel>>, GetEntitiesResponse<ToDoModel>>()
+               .Name("Get")
+               .Argument<IntGraphType, int>("Page", "Argument for Get ToDos")
                .Argument<StringGraphType, string?>("Like", "Argument for Get ToDos")
                .Argument<ToDosSortOrderType, ToDosSortOrder?>("SortOrder", "Argument for Get ToDos")
                .Argument<IntGraphType, int?>("CategoryId", "Argument for Get ToDos")
                .ResolveAsync(async context =>
                {
+                   int page = context.GetArgument<int>("Page");
                    string? like = context.GetArgument<string?>("Like");
                    ToDosSortOrder sortOrder = context.GetArgument<ToDosSortOrder?>("SortOrder") ?? ToDosSortOrder.DeadlineAcs;
                    int? categoryId = context.GetArgument<int?>("CategoryId");
-                   return await toDoRepository.GetWithCategoryAsync(like, sortOrder, categoryId);
+                   return await toDoRepository.GetWithCategoryAsync(page, like, sortOrder, categoryId);
                });
 
             Field<NonNullGraphType<ToDoType>, ToDoModel>()

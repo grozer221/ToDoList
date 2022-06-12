@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using System.Data.SqlClient;
+using ToDoList.Business.Abstractions;
 using ToDoList.Business.Enums;
 using ToDoList.Business.Models;
 using ToDoList.Business.Repositories;
@@ -14,11 +15,12 @@ namespace ToDoList.MsSql.Repositories
             get { return new SqlConnection(connectionString); }
         }
 
+        public int Take => 3;
+
         public MSSqlCategoryRepository(string connectionString)
         {
             this.connectionString = connectionString;
         }
-
 
         public async Task<CategoryModel> GetByIdOrDefaultAsync(int id)
         {
@@ -38,76 +40,45 @@ namespace ToDoList.MsSql.Repositories
             return category;
         }
 
-        public async Task<IEnumerable<CategoryModel>> GetOrDefaultAsync(string? like, CategoriesSortOrder sortOrder)
+        public async Task<GetEntitiesResponse<CategoryModel>> GetAsync(string? like, CategoriesSortOrder sortOrder, int page)
         {
             like = like ?? "";
             like = $"%{like}%";
-            string query = @"select * from Categories
-                            where Categories.Name like @like ";
+            string getEntitieQuery = @"select *, count(*) over() as AllCount 
+                                        from Categories
+                                        where Categories.Name like @like ";
+
+            string getCountQuery = getEntitieQuery.Replace("*", "count(*)");
 
             switch (sortOrder)
             {
                 case CategoriesSortOrder.NameDesc:
-                    query += $"order by Categories.Name desc";
+                    getEntitieQuery += $"order by Categories.Name desc";
                     break;
                 case CategoriesSortOrder.NameAsc:
-                    query += $"order by Categories.Name asc";
+                    getEntitieQuery += $"order by Categories.Name asc";
                     break;
                 case CategoriesSortOrder.DateAsc:
-                    query += $"order by Categories.CreatedAt asc";
+                    getEntitieQuery += $"order by Categories.CreatedAt asc";
                     break;
                 case CategoriesSortOrder.DateDesc:
-                    query += $"order by Categories.CreatedAt desc";
+                    getEntitieQuery += $"order by Categories.CreatedAt desc";
                     break;
             }
+            getEntitieQuery += " OFFSET @skip ROWS FETCH NEXT @take ROWS ONLY";
+            int skip = (page - 1) * Take;
             using (var connection = DbConnection)
             {
                 await connection.OpenAsync();
-                return await connection.QueryAsync<CategoryModel>(query, new { like });
-            }
-        }
-
-        public async Task<IEnumerable<CategoryModel>> GetAsync(string? like, CategoriesSortOrder sortOrder)
-        {
-            var categories = await GetOrDefaultAsync(like, sortOrder);
-            if (categories == null)
-                throw new Exception($"Categories not found");
-            return categories;
-        }
-
-        public async Task<CategoryModel> GetByIdWithTodosOrDefaultAsync(int id)
-        {
-            var categories = await GetWithTodosAsync();
-            return categories.FirstOrDefault(c => c.Id == id);
-        }
-
-        public async Task<CategoryModel> GetByIdWithTodosAsync(int id)
-        {
-            var category = await GetByIdWithTodosAsync(id);
-            if (category == null)
-                throw new Exception($"Category with id {id} not found");
-            return category;
-        }
-
-        public async Task<IEnumerable<CategoryModel>> GetWithTodosAsync()
-        {
-            string query = @"select * from Categories 
-                            left join ToDos on Categories.Id = ToDos.CategoryId";
-            var lookup = new Dictionary<int, CategoryModel>();
-            using (var connection = DbConnection)
-            {
-                await connection.OpenAsync();
-                return await connection.QueryAsync<CategoryModel, ToDoModel, CategoryModel>(query, (c, toDo) =>
+                var reader = await connection.QueryMultipleAsync($"{getCountQuery} {getEntitieQuery}", new { like, Take, skip });
+                int total = reader.Read<int>().FirstOrDefault();
+                var categories = reader.Read<CategoryModel>();
+                return new GetEntitiesResponse<CategoryModel>
                 {
-                    CategoryModel category;
-                    if (!lookup.TryGetValue(c.Id, out category))
-                    {
-                        lookup.Add(c.Id, category = c);
-                    }
-                    if (toDo != null)
-                        category.ToDos.Add(toDo);
-                    return category;
-                });
+                    Entities = categories,
+                    PageSize = Take,
+                    Total = total,
+                };
             }
         }
 

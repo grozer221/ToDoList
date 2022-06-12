@@ -1,5 +1,7 @@
 ﻿using GraphQL.Types;
+using ToDoList.Business.Abstractions;
 using ToDoList.GraphQL.Modules.ToDos;
+using ToDoList.Server.GraphQL.Types;
 
 namespace ToDoList.GraphQL.Modules.Categories
 {
@@ -19,12 +21,12 @@ namespace ToDoList.GraphQL.Modules.Categories
                .Name("Name")
                .Resolve(context => context.Source.Name);
             
-            Field<NonNullGraphType<ListGraphType<ToDoType>>, IEnumerable<ToDoModel>>()
+            Field<NonNullGraphType<GetEntitiesResponseType<ToDoType, ToDoModel>>, GetEntitiesResponse<ToDoModel>>()
                .Name("ToDos")
                .ResolveAsync(async context =>
                {
                    int categoryId = context.Source.Id;
-                   return await toDoRepository.GetWithCategoryAsync("", Business.Enums.ToDosSortOrder.DeadlineAcs, categoryId);
+                   return await toDoRepository.GetWithCategoryAsync(1, "", Business.Enums.ToDosSortOrder.DeadlineAcs, categoryId);
                });
 
             Field<NonNullGraphType<DateTimeGraphType>, DateTime>()

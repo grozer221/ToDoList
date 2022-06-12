@@ -37,7 +37,7 @@ export const TodosUpdate = () => {
         }
 
         if (!categories.length) {
-            dispatch(categoriesActions.fetchCategories(null, null))
+            dispatch(categoriesActions.fetchCategories(1, null, null))
         }
 
         return () => {

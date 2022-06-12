@@ -4,9 +4,18 @@ import {CategoriesCreateInputType, CategoriesUpdateInputType} from "../../graphQ
 import {CategoriesSortOrder} from "../../graphQL/enums/categoriesSortOrder";
 
 export const categoriesActions = {
-    fetchCategories: (like: string | null, sortOrder: CategoriesSortOrder | null) => ({
+    setPageSize: (pageSize: number) => ({
+        type: 'SET_PAGE_SIZE',
+        payload: pageSize,
+    } as const),
+    setTotal: (total: number) => ({
+        type: 'SET_TOTAL',
+        payload: total,
+    } as const),
+
+    fetchCategories: (page: number, like: string | null, sortOrder: CategoriesSortOrder | null) => ({
         type: 'FETCH_CATEGORIES',
-        payload: {like, sortOrder},
+        payload: {page, like, sortOrder},
     } as const),
     setCategories: (todos: Category[]) => ({
         type: 'SET_CATEGORIES',

@@ -1,14 +1,14 @@
-﻿using ToDoList.Business.Enums;
+﻿using ToDoList.Business.Abstractions;
+using ToDoList.Business.Enums;
 using ToDoList.Business.Models;
 
 namespace ToDoList.Business.Repositories;
 
 public interface IToDoRepository
 {
+    int Take { get; }
     Task<ToDoModel> GetByIdAsync(int id);
-    Task<ToDoModel> GetByIdOrDefaultAsync(int id);
-    Task<IEnumerable<ToDoModel>> GetWithCategoryAsync(string? like, ToDosSortOrder sortOrder, int? categoryId);
-    Task<IEnumerable<ToDoModel>> GetWithCategoryOrDefaultAsync(string? like, ToDosSortOrder sortOrder, int? categoryId);
+    Task<GetEntitiesResponse<ToDoModel>> GetWithCategoryAsync(int page, string? like, ToDosSortOrder sortOrder, int? categoryId);
     Task<ToDoModel> CreateAsync(ToDoModel toDo);
     Task<ToDoModel> UpdateAsync(ToDoModel toDo);
     Task<ToDoModel> RemoveAsync(int id);

@@ -31,11 +31,16 @@ export const fetchCategoriesEpic: Epic<ReturnType<typeof categoriesActions.fetch
             from(client.query<CategoriesGetAllData, CategoriesGetAllVars>({
                 query: CATEGORIES_GET_ALL_QUERY,
                 variables: {
+                    page: action.payload.page,
                     like: action.payload.like,
                     sortOrder: action.payload.sortOrder,
                 }
             })).pipe(
-                map(response => categoriesActions.setCategories(response.data.categories.getAll)),
+                mergeMap(response => [
+                    categoriesActions.setCategories(response.data.categories.get.entities),
+                    categoriesActions.setTotal(response.data.categories.get.total),
+                    categoriesActions.setPageSize(response.data.categories.get.pageSize),
+                ]),
                 catchError(error => of(categoriesActions.setFetchCategoriesError(error))),
                 startWith(categoriesActions.setFetchCategoriesLoading(true)),
                 endWith(categoriesActions.setFetchCategoriesLoading(false)),

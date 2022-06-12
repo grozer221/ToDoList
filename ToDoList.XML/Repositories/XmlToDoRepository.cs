@@ -1,5 +1,6 @@
 ﻿using System.Xml.Linq;
 using System.Xml.Serialization;
+using ToDoList.Business.Abstractions;
 using ToDoList.Business.Enums;
 using ToDoList.Business.Models;
 using ToDoList.Business.Repositories;
@@ -11,6 +12,8 @@ namespace ToDoList.XML.Repositories
     {
         private readonly string xmlFileName;
         private readonly XmlSerializer xmlSerializer;
+
+        public int Take => 3;
 
         public XmlToDoRepository(string xmlFileName)
         {
@@ -25,7 +28,7 @@ namespace ToDoList.XML.Repositories
             xmlSerializer = new XmlSerializer(typeof(DataWrapper));
         }
 
-        public Task<ToDoModel> GetByIdOrDefaultAsync(int id)
+        public Task<ToDoModel> GetByIdAsync(int id)
         {
             using (FileStream fs = new FileStream(xmlFileName, FileMode.OpenOrCreate))
             {
@@ -37,15 +40,7 @@ namespace ToDoList.XML.Repositories
             }
         }
 
-        public async Task<ToDoModel> GetByIdAsync(int id)
-        {
-            var toDo = await GetByIdOrDefaultAsync(id);
-            if (toDo == null)
-                throw new Exception($"ToDo with id {id} not found");
-            return toDo;
-        }
-
-        public Task<IEnumerable<ToDoModel>> GetWithCategoryOrDefaultAsync(string? like, ToDosSortOrder sortOrder, int? categoryId)
+        public Task<GetEntitiesResponse<ToDoModel>> GetWithCategoryAsync(int page = 1, string? like = null, ToDosSortOrder sortOrder = ToDosSortOrder.DeadlineAcs, int? categoryId = null)
         {
             like ??= string.Empty;
             using (FileStream fs = new FileStream(xmlFileName, FileMode.OpenOrCreate))
@@ -63,6 +58,7 @@ namespace ToDoList.XML.Repositories
                     toDos = data.ToDos
                         .Where(t => t.CategoryId == categoryId);
 
+                int total = toDos.Count();
                 switch (sortOrder)
                 {
                     case ToDosSortOrder.DeadlineAcs:
@@ -84,21 +80,19 @@ namespace ToDoList.XML.Repositories
                         toDos = GetOrderedBy(toDos, t => t.DateComplete.HasValue, t => t.DateComplete, OrderBy.Desc);
                         break;
                 }
-
+                int skip = (page - 1) * Take;
+                toDos.Skip(skip).Take(Take);
                 foreach (var toDo in toDos)
                 {
                     toDo.Category = data.Categories.SingleOrDefault(c => c.Id == toDo.CategoryId);
                 }
-                return Task.FromResult(toDos);
+                return Task.FromResult(new GetEntitiesResponse<ToDoModel>
+                {
+                    Entities = toDos,
+                    PageSize = Take,
+                    Total = total,
+                });
             }
-        }
-
-        public Task<IEnumerable<ToDoModel>> GetWithCategoryAsync(string? like = null, ToDosSortOrder sortOrder = ToDosSortOrder.DeadlineAcs, int? categoryId = null)
-        {
-            var toDos = GetWithCategoryOrDefaultAsync(like, sortOrder, categoryId);
-            if (toDos == null)
-                throw new Exception($"ToDos not found");
-            return toDos;
         }
 
         private IEnumerable<ToDoModel> GetOrderedBy(IEnumerable<ToDoModel> toDos, Func<ToDoModel, object> keySelector1, Func<ToDoModel, object> keySelector2, OrderBy orderBy)

@@ -3,6 +3,9 @@ import {Todo} from "../../graphQL/modules/todos/todos.types";
 import {TodoActionTypes} from "./todos.actions";
 
 const initialState = {
+    pageSize: 0,
+    total: 0,
+
     todos: [] as Todo[],
     fetchTodosLoading: false,
     fetchTodosError: '',
@@ -24,6 +27,11 @@ const initialState = {
 
 export const todosReducer: Reducer<typeof initialState, TodoActionTypes> = (state = initialState, action) => {
     switch (action.type) {
+        case 'SET_PAGE_SIZE':
+            return {...state, pageSize: action.payload};
+        case 'SET_TOTAL':
+            return {...state, total: action.payload};
+
         case 'SET_TODOS':
             return {...state, todos: action.payload};
         case 'SET_FETCH_TODOS_LOADING':

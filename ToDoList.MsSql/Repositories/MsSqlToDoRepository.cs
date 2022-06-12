@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using System.Data.SqlClient;
+using ToDoList.Business.Abstractions;
 using ToDoList.Business.Enums;
 using ToDoList.Business.Models;
 using ToDoList.Business.Repositories;
@@ -14,12 +15,14 @@ namespace ToDoList.MsSql.Repositories
             get { return new SqlConnection(connectionString); }
         }
 
+        public int Take => 3;
+
         public MSSqlToDoRepository(string connectionString)
         {
             this.connectionString = connectionString;
         }
 
-        public async Task<ToDoModel> GetByIdOrDefaultAsync(int id)
+        public async Task<ToDoModel> GetByIdAsync(int id)
         {
             string query = $"select * from ToDos where id = @id";
             using (var connection = DbConnection)
@@ -29,64 +32,55 @@ namespace ToDoList.MsSql.Repositories
             }
         }
 
-        public async Task<ToDoModel> GetByIdAsync(int id)
-        {
-            var toDo = await GetByIdOrDefaultAsync(id);
-            if (toDo == null)
-                throw new Exception($"ToDo with id {id} not found");
-            return toDo;
-        }
-
-        public async Task<IEnumerable<ToDoModel>> GetWithCategoryOrDefaultAsync(string? like, ToDosSortOrder sortOrder, int? categoryId)
+        public async Task<GetEntitiesResponse<ToDoModel>> GetWithCategoryAsync(int page = 1, string? like = null, ToDosSortOrder sortOrder = ToDosSortOrder.DeadlineAcs, int? categoryId = null)
         {
             like = like ?? "";
             like = $"%{like}%";
-            string query = @"select * from Todos 
-                            left join Categories on ToDos.categoryId = Categories.Id 
-                            where ToDos.Name like @like ";
+            string getEntitieQuery = @"select * from Todos 
+                                       left join Categories on ToDos.categoryId = Categories.Id 
+                                       where ToDos.Name like @like ";
 
             if (categoryId != null && categoryId != 0)
-                query += @"and ToDos.CategoryId = @categoryId ";
+                getEntitieQuery += @"and ToDos.CategoryId = @categoryId ";
+
+            string getCountQuery = getEntitieQuery.Replace("*", "count(*)");
 
             switch (sortOrder)
             {
                 case ToDosSortOrder.DeadlineAcs:
-                    query += GetOrderBy("Deadline", "asc");
+                    getEntitieQuery += GetOrderBy("Deadline", "asc");
                     break;
                 case ToDosSortOrder.DeadlineDecs:
-                    query += GetOrderBy("Deadline", "desc");
+                    getEntitieQuery += GetOrderBy("Deadline", "desc");
                     break;
                 case ToDosSortOrder.NameAsc:
-                    query += GetOrderBy("Name", "asc");
+                    getEntitieQuery += GetOrderBy("Name", "asc");
                     break;
                 case ToDosSortOrder.NameDesc:
-                    query += GetOrderBy("Name", "desc");
+                    getEntitieQuery += GetOrderBy("Name", "desc");
                     break;
                 case ToDosSortOrder.DateCompleteAsc:
-                    query += GetOrderBy("DateComplete", "asc");
+                    getEntitieQuery += GetOrderBy("DateComplete", "asc");
                     break;
                 case ToDosSortOrder.DateCompleteDesc:
-                    query += GetOrderBy("DateComplete", "desc");
+                    getEntitieQuery += GetOrderBy("DateComplete", "desc");
                     break;
             }
+            getEntitieQuery += " OFFSET @skip ROWS FETCH NEXT @take ROWS ONLY";
+            int skip = (page - 1) * Take;
             using (var connection = DbConnection)
             {
                 await connection.OpenAsync();
-                return await connection.QueryAsync<ToDoModel, CategoryModel, ToDoModel>(query, (toDo, category) =>
+                var reader = await connection.QueryMultipleAsync($"{getCountQuery} {getEntitieQuery}", new { like, categoryId, take = Take, skip });
+                int total = reader.Read<int>().FirstOrDefault();
+                var todos = reader.Read<ToDoModel>();
+                return new GetEntitiesResponse<ToDoModel>
                 {
-                    toDo.CategoryId = category?.Id;
-                    toDo.Category = category;
-                    return toDo;
-                }, new { like, categoryId });
+                    Entities = todos,
+                    PageSize = Take,
+                    Total = total,
+                };
             }
-        }
-
-        public async Task<IEnumerable<ToDoModel>> GetWithCategoryAsync(string? like = null, ToDosSortOrder sortOrder = ToDosSortOrder.DeadlineAcs, int? categoryId = null)
-        {
-            var toDos = await GetWithCategoryOrDefaultAsync(like, sortOrder, categoryId);
-            if (toDos == null)
-                throw new Exception($"ToDos not found");
-            return toDos;
         }
 
         private string GetOrderBy(string columnName, string typeColumnName)

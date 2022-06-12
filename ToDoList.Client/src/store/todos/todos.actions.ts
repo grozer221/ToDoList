@@ -4,9 +4,18 @@ import {TodosCreateInputType, ToDosUpdateInputType} from "../../graphQL/modules/
 import {TodosSortOrder} from "../../graphQL/enums/todosSortOrder";
 
 export const todosActions = {
-    fetchTodos: (like: string | null, sortOrder: TodosSortOrder | null, categoryId: number | null) => ({
+    setPageSize: (pageSize: number) => ({
+        type: 'SET_PAGE_SIZE',
+        payload: pageSize,
+    } as const),
+    setTotal: (total: number) => ({
+        type: 'SET_TOTAL',
+        payload: total,
+    } as const),
+
+    fetchTodos: (page: number, like: string | null, sortOrder: TodosSortOrder | null, categoryId: number | null) => ({
         type: 'FETCH_TODOS',
-        payload: {like, sortOrder, categoryId},
+        payload: {page, like, sortOrder, categoryId},
     } as const),
     setTodos: (todos: Todo[]) => ({
         type: 'SET_TODOS',

@@ -3,6 +3,8 @@ import {Category} from "../../graphQL/modules/categories/categories.types";
 import {CategoryActionTypes} from "./categories.actions";
 
 const initialState = {
+    pageSize: 0,
+    total: 0,
     categories: [] as Category[],
     fetchCategoriesLoading: false,
     fetchCategoriesError: '',
@@ -24,6 +26,11 @@ const initialState = {
 
 export const categoriesReducer: Reducer<typeof initialState, CategoryActionTypes> = (state = initialState, action) => {
     switch (action.type) {
+        case 'SET_PAGE_SIZE':
+            return {...state, pageSize: action.payload};
+        case 'SET_TOTAL':
+            return {...state, total: action.payload};
+
         case 'SET_CATEGORIES':
             return {...state, categories: action.payload};
         case 'SET_FETCH_CATEGORIES_LOADING':

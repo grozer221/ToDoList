@@ -35,7 +35,6 @@
 	<ItemGroup>
 		<ProjectReference Include="..\ToDoList.Business\ToDoList.Business.csproj" />
 		<ProjectReference Include="..\ToDoList.MsSql\ToDoList.MsSql.csproj" />
-		<ProjectReference Include="..\ToDoList.MySql\ToDoList.MySql.csproj" />
 		<ProjectReference Include="..\ToDoList.XML\ToDoList.XML.csproj" />
 	</ItemGroup>
 

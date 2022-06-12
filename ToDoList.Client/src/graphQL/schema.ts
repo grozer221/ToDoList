@@ -2,168 +2,190 @@ import {gql} from '@apollo/client';
 
 export const schema = gql`
   schema {
-  query: RootQueries
-  mutation: RootMutations
-}
+    query: RootQueries
+    mutation: RootMutations
+  }
 
-type RootQueries {
-  toDos: ToDosQueries
-  categories: CategoriesQueries
-}
+  type RootQueries {
+    toDos: ToDosQueries
+    categories: CategoriesQueries
+  }
 
-type ToDosQueries {
-  getAll(
-    """
-    Argument for Get ToDos
-    """
-    like: String
+  type ToDosQueries {
+    get(
+      """
+      Argument for Get ToDos
+      """
+      page: Int = 0
 
-    """
-    Argument for Get ToDos
-    """
-    sortOrder: ToDosSortOrder
+      """
+      Argument for Get ToDos
+      """
+      like: String
 
-    """
-    Argument for Get ToDos
-    """
+      """
+      Argument for Get ToDos
+      """
+      sortOrder: ToDosSortOrder
+
+      """
+      Argument for Get ToDos
+      """
+      categoryId: Int
+    ): GetToDoResponseType!
+    getById(
+      """
+      Argument for Get ToDo
+      """
+      id: Int! = 0
+    ): ToDoType!
+  }
+
+  type GetToDoResponseType {
+    entities: [ToDoType]!
+    total: Int!
+    pageSize: Int!
+  }
+
+  type ToDoType {
+    id: Int!
+    name: String!
+    isComplete: Boolean!
+    deadline: DateTime
+    dateComplete: DateTime
     categoryId: Int
-  ): [ToDoType]!
-  getById(
-    """
-    Argument for Get ToDo
-    """
-    id: Int! = 0
-  ): ToDoType!
-}
+    category: CategoryType
+    createdAt: DateTime!
+    updatedAt: DateTime!
+  }
 
-type ToDoType {
-  id: Int!
-  name: String!
-  isComplete: Boolean!
-  deadline: DateTime
-  dateComplete: DateTime
-  categoryId: Int
-  category: CategoryType
-  createdAt: DateTime!
-  updatedAt: DateTime!
-}
+  """
+  The \`DateTime\` scalar type represents a date and time. \`DateTime\` expects timestamps to be formatted in accordance with the [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601) standard.
+  """
+  scalar DateTime
 
-"""
-The \`DateTime\` scalar type represents a date and time. \`DateTime\` expects timestamps to be formatted in accordance with the [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601) standard.
-"""
-scalar DateTime
+  type CategoryType {
+    id: Int!
+    name: String!
+    toDos: GetToDoResponseType!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+  }
 
-type CategoryType {
-  id: Int!
-  name: String!
-  toDos: [ToDoType]!
-  createdAt: DateTime!
-  updatedAt: DateTime!
-}
+  enum ToDosSortOrder {
+    deadlineAcs
+    deadlineDecs
+    dateCompleteAsc
+    dateCompleteDesc
+    nameAsc
+    nameDesc
+  }
 
-enum ToDosSortOrder {
-  deadlineAcs
-  deadlineDecs
-  dateCompleteAsc
-  dateCompleteDesc
-  nameAsc
-  nameDesc
-}
+  type CategoriesQueries {
+    get(
+      """
+      Argument for Get Categories
+      """
+      page: Int! = 0
 
-type CategoriesQueries {
-  getAll(
-    """
-    Argument for Get Categories
-    """
-    like: String
+      """
+      Argument for Get Categories
+      """
+      like: String
 
-    """
-    Argument for Get Categories
-    """
-    sortOrder: CategoriesSortOrder
-  ): [CategoryType]!
-  getById(
-    """
-    Argument for Get Category
-    """
-    id: Int! = 0
-  ): CategoryType!
-}
+      """
+      Argument for Get Categories
+      """
+      sortOrder: CategoriesSortOrder
+    ): GetCategoryResponseType!
+    getById(
+      """
+      Argument for Get Category
+      """
+      id: Int! = 0
+    ): CategoryType!
+  }
 
-enum CategoriesSortOrder {
-  nameAsc
-  nameDesc
-  dateAsc
-  dateDesc
-}
+  type GetCategoryResponseType {
+    entities: [CategoryType]!
+    total: Int!
+    pageSize: Int!
+  }
 
-type RootMutations {
-  toDos: ToDosMutations
-  categories: CategoriesMutations
-}
+  enum CategoriesSortOrder {
+    nameAsc
+    nameDesc
+    dateAsc
+    dateDesc
+  }
 
-type ToDosMutations {
-  create(
-    """
-    argument for Create ToDo
-    """
-    toDosCreateInputType: ToDosCreateInputType!
-  ): ToDoType
-  update(
-    """
-    Argument for Create ToDo
-    """
-    toDosUpdateInputType: ToDosUpdateInputType!
-  ): ToDoType
-  remove(
-    """
-    Argument for Remove ToDo
-    """
-    id: Int! = 0
-  ): ToDoType
-}
+  type RootMutations {
+    toDos: ToDosMutations
+    categories: CategoriesMutations
+  }
 
-input ToDosCreateInputType {
-  name: String!
-  deadline: DateTime
-  categoryId: Int
-}
+  type ToDosMutations {
+    create(
+      """
+      argument for Create ToDo
+      """
+      toDosCreateInputType: ToDosCreateInputType!
+    ): ToDoType
+    update(
+      """
+      Argument for Create ToDo
+      """
+      toDosUpdateInputType: ToDosUpdateInputType!
+    ): ToDoType
+    remove(
+      """
+      Argument for Remove ToDo
+      """
+      id: Int! = 0
+    ): ToDoType
+  }
 
-input ToDosUpdateInputType {
-  id: Int!
-  isComplete: Boolean!
-  name: String!
-  deadline: DateTime
-  categoryId: Int
-}
+  input ToDosCreateInputType {
+    name: String!
+    deadline: DateTime
+    categoryId: Int
+  }
 
-type CategoriesMutations {
-  create(
-    """
-    Argument for Create Category
-    """
-    categoriesCreateInputType: CategoriesCreateInputType!
-  ): CategoryType
-  update(
-    """
-    Argument for Update Category
-    """
-    categoriesUpdateInputType: CategoriesUpdateInputType!
-  ): CategoryType
-  remove(
-    """
-    Argument for Remove Category
-    """
-    id: Int! = 0
-  ): CategoryType
-}
+  input ToDosUpdateInputType {
+    id: Int!
+    isComplete: Boolean!
+    name: String!
+    deadline: DateTime
+    categoryId: Int
+  }
 
-input CategoriesCreateInputType {
-  name: String!
-}
+  type CategoriesMutations {
+    create(
+      """
+      Argument for Create Category
+      """
+      categoriesCreateInputType: CategoriesCreateInputType!
+    ): CategoryType
+    update(
+      """
+      Argument for Update Category
+      """
+      categoriesUpdateInputType: CategoriesUpdateInputType!
+    ): CategoryType
+    remove(
+      """
+      Argument for Remove Category
+      """
+      id: Int! = 0
+    ): CategoryType
+  }
 
-input CategoriesUpdateInputType {
-  id: Int!
-  name: String!
-}
+  input CategoriesCreateInputType {
+    name: String!
+  }
+
+  input CategoriesUpdateInputType {
+    id: Int!
+    name: String!
+  }
 `

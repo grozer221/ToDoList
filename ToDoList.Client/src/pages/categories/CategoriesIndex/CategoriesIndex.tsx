@@ -13,9 +13,12 @@ import {Category} from "../../../graphQL/modules/categories/categories.types";
 import {CategoriesSortOrder} from "../../../graphQL/enums/categoriesSortOrder";
 import {ButtonSubmit} from "../../../components/ButtonSubmit/ButtonSubmit";
 import {camelCaseToString} from "../../../convertors/stringToDatetimeConvertors";
+import {Loading} from "../../../components/Loading/Loading";
 
 export const CategoriesIndex = () => {
     const dispatch = useDispatch();
+    const pageSize = useSelector((s: RootState) => s.categories.pageSize)
+    const total = useSelector((s: RootState) => s.categories.total)
     const categories = useSelector((s: RootState) => s.categories.categories)
     const fetchCategoriesLoading = useSelector((s: RootState) => s.categories.fetchCategoriesLoading)
     const fetchCategoriesError = useSelector((s: RootState) => s.categories.fetchCategoriesError)
@@ -34,10 +37,11 @@ export const CategoriesIndex = () => {
     }, [fetchCategoriesError, fetchRemoveCategoryError])
 
     useEffect(() => {
+        const page = parseInt(searchParams.get('page') || '') || 1
         const likeInput = searchParams.get('like');
         const sortOrderString = searchParams.get('sortOrder');
         const sortOrder = CategoriesSortOrder[sortOrderString as keyof typeof CategoriesSortOrder] || CategoriesSortOrder.nameAsc;
-        dispatch(categoriesActions.fetchCategories(likeInput, sortOrder));
+        dispatch(categoriesActions.fetchCategories(page, likeInput, sortOrder));
     }, [searchParams])
 
     const onRemove = (id: number): void => {
@@ -65,6 +69,9 @@ export const CategoriesIndex = () => {
     const searchCategoriesHandler = (value: string) => {
         debouncedSearchCategoriesHandler(value);
     };
+
+    if (total === 0 && pageSize === 0 && fetchCategoriesLoading)
+        return <Loading/>
 
     return (
         <Space direction={'vertical'} style={{width: '100%'}}>
@@ -105,8 +112,13 @@ export const CategoriesIndex = () => {
                 rowKey={'id'}
                 dataSource={categories}
                 columns={columns}
-                pagination={false}
                 loading={fetchCategoriesLoading}
+                pagination={{
+                    current: parseInt(searchParams.get('page') || '') || 1,
+                    defaultPageSize: pageSize,
+                    total: total,
+                    onChange: page => setSearchParams({page: page.toString()}),
+                }}
             />
 
         </Space>

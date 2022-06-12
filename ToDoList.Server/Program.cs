@@ -1,7 +1,6 @@
 using ToDoList;
 using ToDoList.GraphQL;
 using ToDoList.MsSql.Extensions;
-using ToDoList.MySql.Extensions;
 using ToDoList.XML.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,15 +18,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddAutoMapper(typeof(AppMappingProfile));
 
-if (builder.Environment.IsDevelopment())
-{
-    builder.Services.AddMsSqlDataProvider(builder.Configuration.GetConnectionString("MsSql"));
-}
-else
-{
-    builder.Services.AddMySqlDataProvider(Environment.GetEnvironmentVariable("JAWSDB_URL"));
-}
-
+builder.Services.AddMsSqlDataProvider(builder.Configuration.GetConnectionString("MsSql"));
 builder.Services.AddXmlDataProdiver(builder.Configuration.GetConnectionString("Xml"));
 
 builder.Services.AddGraphQLApi();

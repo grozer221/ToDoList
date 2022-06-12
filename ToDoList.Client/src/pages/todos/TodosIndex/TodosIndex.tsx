@@ -14,12 +14,16 @@ import debounce from 'lodash.debounce';
 import {TodosSortOrder} from "../../../graphQL/enums/todosSortOrder";
 import {categoriesActions} from "../../../store/categories/categories.actions";
 import {camelCaseToString, stringToUSDatetime} from "../../../convertors/stringToDatetimeConvertors";
+import {Loading} from "../../../components/Loading/Loading";
 
 export const TodosIndex = () => {
     const dispatch = useDispatch();
     const categories = useSelector((s: RootState) => s.categories.categories)
     const fetchCategoriesLoading = useSelector((s: RootState) => s.categories.fetchCategoriesLoading)
     const fetchCategoriesError = useSelector((s: RootState) => s.categories.fetchCategoriesError)
+
+    const pageSize = useSelector((s: RootState) => s.todos.pageSize)
+    const total = useSelector((s: RootState) => s.todos.total)
     const todos = useSelector((s: RootState) => s.todos.todos)
     const fetchTodosLoading = useSelector((s: RootState) => s.todos.fetchTodosLoading)
     const fetchTodosError = useSelector((s: RootState) => s.todos.fetchTodosError)
@@ -27,16 +31,17 @@ export const TodosIndex = () => {
     const [searchParams, setSearchParams] = useSearchParams();
 
     useEffect(() => {
-        dispatch(categoriesActions.fetchCategories(null, null))
+        dispatch(categoriesActions.fetchCategories(1, null, null))
     }, [])
 
     useEffect(() => {
+        const page = parseInt(searchParams.get('page') || '') || 1
         const likeInput = searchParams.get('like');
         const sortOrderString = searchParams.get('sortOrder');
         const sortOrder = TodosSortOrder[sortOrderString as keyof typeof TodosSortOrder] || TodosSortOrder.deadlineDecs;
         const categoryIdString = searchParams.get('categoryId');
         const categoryId = categoryIdString ? parseInt(categoryIdString) : null;
-        dispatch(todosActions.fetchTodos(likeInput, sortOrder, categoryId));
+        dispatch(todosActions.fetchTodos(page, likeInput, sortOrder, categoryId));
     }, [searchParams])
 
     useEffect(() => {
@@ -120,6 +125,9 @@ export const TodosIndex = () => {
         debouncedSearchTodosHandler(value);
     };
 
+    if (total === 0 && pageSize === 0 && fetchTodosLoading)
+        return <Loading/>
+
     return (
         <div>
             <TodosCreate/>
@@ -172,8 +180,13 @@ export const TodosIndex = () => {
                 rowKey={'id'}
                 dataSource={todos}
                 columns={columns}
-                pagination={false}
                 loading={fetchTodosLoading}
+                pagination={{
+                    current: parseInt(searchParams.get('page') || '') || 1,
+                    defaultPageSize: pageSize,
+                    total: total,
+                    onChange: page => setSearchParams({page: page.toString()}),
+                }}
             />
 
         </div>
