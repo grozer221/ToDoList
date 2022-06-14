@@ -44,11 +44,11 @@ namespace ToDoList.MsSql.Repositories
         {
             like = like ?? "";
             like = $"%{like}%";
-            string getEntitieQuery = @"select *, count(*) over() as AllCount 
-                                        from Categories
-                                        where Categories.Name like @like ";
+            string query = @"select {0} from Categories
+                            where Categories.Name like @like ";
 
-            string getCountQuery = getEntitieQuery.Replace("*", "count(*)");
+            string getCountQuery = string.Format(query, "count(*)");
+            string getEntitieQuery = string.Format(query, "*");
 
             switch (sortOrder)
             {

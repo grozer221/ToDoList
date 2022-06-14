@@ -32,18 +32,18 @@ namespace ToDoList.MsSql.Repositories
             }
         }
 
-        public async Task<GetEntitiesResponse<ToDoModel>> GetWithCategoryAsync(int page = 1, string? like = null, ToDosSortOrder sortOrder = ToDosSortOrder.DeadlineAcs, int? categoryId = null)
+        public async Task<GetEntitiesResponse<ToDoModel>> GetAsync(int page = 1, string? like = null, ToDosSortOrder sortOrder = ToDosSortOrder.DeadlineAcs, int? categoryId = null)
         {
             like = like ?? "";
             like = $"%{like}%";
-            string getEntitieQuery = @"select * from Todos 
-                                       left join Categories on ToDos.categoryId = Categories.Id 
-                                       where ToDos.Name like @like ";
+            string query = @"select {0} from Todos 
+                            where ToDos.Name like @like ";
 
             if (categoryId != null && categoryId != 0)
-                getEntitieQuery += @"and ToDos.CategoryId = @categoryId ";
+                query += @"and ToDos.CategoryId = @categoryId ";
 
-            string getCountQuery = getEntitieQuery.Replace("*", "count(*)");
+            string getCountQuery = string.Format(query, "count(*)");
+            string getEntitieQuery = string.Format(query, "*");
 
             switch (sortOrder)
             {
@@ -71,7 +71,7 @@ namespace ToDoList.MsSql.Repositories
             using (var connection = DbConnection)
             {
                 await connection.OpenAsync();
-                var reader = await connection.QueryMultipleAsync($"{getCountQuery} {getEntitieQuery}", new { like, categoryId, take = Take, skip });
+                var reader = await connection.QueryMultipleAsync($"{getCountQuery} {getEntitieQuery}", new { like, categoryId, Take, skip });
                 int total = reader.Read<int>().FirstOrDefault();
                 var todos = reader.Read<ToDoModel>();
                 return new GetEntitiesResponse<ToDoModel>
@@ -110,9 +110,9 @@ namespace ToDoList.MsSql.Repositories
             toDo.CreatedAt = dateTimeNow;
             toDo.UpdatedAt = dateTimeNow;
             string query = $@"insert into Todos 
-                        (Name, IsComplete, Deadline, CategoryId, CreatedAt, UpdatedAt) 
-                        values (@Name, @IsComplete, @Deadline, @CategoryId, @CreatedAt, @UpdatedAt);
-                        SELECT CAST(SCOPE_IDENTITY() as int);";
+                            (Name, IsComplete, Deadline, CategoryId, CreatedAt, UpdatedAt) 
+                            values (@Name, @IsComplete, @Deadline, @CategoryId, @CreatedAt, @UpdatedAt);
+                            SELECT CAST(SCOPE_IDENTITY() as int);";
             using (var connection = DbConnection)
             {
                 await connection.OpenAsync();

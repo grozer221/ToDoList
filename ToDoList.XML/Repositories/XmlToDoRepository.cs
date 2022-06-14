@@ -40,7 +40,7 @@ namespace ToDoList.XML.Repositories
             }
         }
 
-        public Task<GetEntitiesResponse<ToDoModel>> GetWithCategoryAsync(int page = 1, string? like = null, ToDosSortOrder sortOrder = ToDosSortOrder.DeadlineAcs, int? categoryId = null)
+        public Task<GetEntitiesResponse<ToDoModel>> GetAsync(int page = 1, string? like = null, ToDosSortOrder sortOrder = ToDosSortOrder.DeadlineAcs, int? categoryId = null)
         {
             like ??= string.Empty;
             using (FileStream fs = new FileStream(xmlFileName, FileMode.OpenOrCreate))
@@ -82,10 +82,6 @@ namespace ToDoList.XML.Repositories
                 }
                 int skip = (page - 1) * Take;
                 toDos.Skip(skip).Take(Take);
-                foreach (var toDo in toDos)
-                {
-                    toDo.Category = data.Categories.SingleOrDefault(c => c.Id == toDo.CategoryId);
-                }
                 return Task.FromResult(new GetEntitiesResponse<ToDoModel>
                 {
                     Entities = toDos,

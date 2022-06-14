@@ -8,7 +8,7 @@ public interface IToDoRepository
 {
     int Take { get; }
     Task<ToDoModel> GetByIdAsync(int id);
-    Task<GetEntitiesResponse<ToDoModel>> GetWithCategoryAsync(int page, string? like, ToDosSortOrder sortOrder, int? categoryId);
+    Task<GetEntitiesResponse<ToDoModel>> GetAsync(int page, string? like, ToDosSortOrder sortOrder, int? categoryId);
     Task<ToDoModel> CreateAsync(ToDoModel toDo);
     Task<ToDoModel> UpdateAsync(ToDoModel toDo);
     Task<ToDoModel> RemoveAsync(int id);

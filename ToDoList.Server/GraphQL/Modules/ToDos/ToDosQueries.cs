@@ -28,7 +28,7 @@ namespace ToDoList.GraphQL.Modules.ToDos
                    string? like = context.GetArgument<string?>("Like");
                    ToDosSortOrder sortOrder = context.GetArgument<ToDosSortOrder?>("SortOrder") ?? ToDosSortOrder.DeadlineAcs;
                    int? categoryId = context.GetArgument<int?>("CategoryId");
-                   return await toDoRepository.GetWithCategoryAsync(page, like, sortOrder, categoryId);
+                   return await toDoRepository.GetAsync(page, like, sortOrder, categoryId);
                });
 
             Field<NonNullGraphType<ToDoType>, ToDoModel>()

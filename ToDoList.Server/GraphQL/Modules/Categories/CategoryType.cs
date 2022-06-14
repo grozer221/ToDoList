@@ -21,14 +21,6 @@ namespace ToDoList.GraphQL.Modules.Categories
                .Name("Name")
                .Resolve(context => context.Source.Name);
             
-            Field<NonNullGraphType<GetEntitiesResponseType<ToDoType, ToDoModel>>, GetEntitiesResponse<ToDoModel>>()
-               .Name("ToDos")
-               .ResolveAsync(async context =>
-               {
-                   int categoryId = context.Source.Id;
-                   return await toDoRepository.GetWithCategoryAsync(1, "", Business.Enums.ToDosSortOrder.DeadlineAcs, categoryId);
-               });
-
             Field<NonNullGraphType<DateTimeGraphType>, DateTime>()
                .Name("CreatedAt")
                .Resolve(context => context.Source.CreatedAt);
